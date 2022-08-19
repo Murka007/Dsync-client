@@ -1,0 +1,38 @@
+{
+  "name": "dsync-client",
+  "author": "Murka",
+  "version": "1.0.8",
+  "description": "The most advanced hack for sploop.io",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "dev": "cross-env MODE=development webpack",
+    "build": "cross-env MODE=production webpack",
+    "dev:tamper": "cross-env MODE=development-tamper webpack",
+    "build:tamper": "cross-env MODE=production-tamper webpack",
+    "start": "cross-env MODE=development webpack --watch",
+    "start:tamper": "cross-env MODE=development-tamper webpack --watch"
+  },
+  "keywords": [
+    "hack",
+    "cheat",
+    "mod",
+    "client",
+    "io",
+    "games",
+    "browser"
+  ],
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "html-inline-script-webpack-plugin": "^3.0.1",
+    "html-loader": "^4.1.0",
+    "html-webpack-plugin": "^5.5.0",
+    "raw-loader": "^4.0.2",
+    "sass": "^1.54.0",
+    "sass-loader": "^13.0.2",
+    "terser-webpack-plugin": "^5.3.3",
+    "ts-loader": "^9.3.1",
+    "webpack-cli": "^4.10.0",
+    "webpack-watch-files-plugin": "^1.2.1"
+  }
+}
