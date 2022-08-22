@@ -26,6 +26,6 @@
 ### ❤️ SUPPORT
 Please, I need you to support this script on greasyfork.<br>
 
-<img src="https://raw.githubusercontent.com/Murka007/Murka007/main/img/greasyfork.svg" align="center" height="35"/>&nbsp;&nbsp;&nbsp;[Dsync client](https://greasyfork.org/en/users/919633)<br>
+<img src="https://raw.githubusercontent.com/Murka007/Murka007/main/img/greasyfork.svg" align="center" height="35"/>&nbsp;&nbsp;&nbsp;[Dsync client](https://greasyfork.org/en/scripts/449995-dsync-client-sploop-io)<br>
 
 <img src="https://raw.githubusercontent.com/Murka007/Murka007/main/img/discord.svg" align="center" height="35"/>&nbsp;&nbsp;&nbsp;[Coding paradise](https://discord.gg/sG9cyfGPj5)
