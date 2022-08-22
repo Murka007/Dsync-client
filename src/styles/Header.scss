@@ -1,0 +1,36 @@
+@import "Variables.scss";
+
+header {
+    background: $sub-bg-color;
+    color: $header-color;
+    padding: $padding-less $padding;
+
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+
+    #version {
+        align-self: flex-end;
+        color: $version-color;
+        font-size: 0.5em;
+        font-weight: 600;
+        margin-left: $padding;
+
+        svg {
+            fill: $version-color;
+        }
+    }
+
+    .icon {
+        margin-left: auto;
+        width: 35px;
+        height: 35px;
+        fill: $text-color-default;
+        transition: fill $delay;
+        cursor: pointer;
+
+        &:hover {
+            fill: $text-color;
+        }
+    }
+}

@@ -1,0 +1,42 @@
+@import "../Variables.scss";
+
+@mixin tooltip {
+    .tooltip {
+        position: relative;
+        margin-left: $padding-less;
+        color: $option-color-light;
+    
+        &:hover {
+            cursor: pointer;
+    
+            .tooltip-text {
+                visibility: visible;
+            }
+        }
+    
+        .tooltip-text {
+            position: absolute;
+            visibility: hidden;
+            text-align: center;
+            overflow: visible;
+            
+            bottom: calc(100% - 5px);
+            left: 50%;
+            transform: translateX(-50%);
+    
+            background-color: $hotkeyInput-bg-color;
+            color: $text-color;
+    
+            width: 225px;
+            font-size: 13px;
+            font-weight: 600;
+            padding: $padding-less;
+            border-radius: $roundness;
+            border: 3px solid $hotkeyInput-bg-color-dark;
+    
+            &.left {
+                text-align: left;
+            }
+        }
+    }
+}

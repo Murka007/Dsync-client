@@ -1,0 +1,39 @@
+@import "../Variables.scss";
+
+@mixin button {
+    .button {
+        outline: none;
+        border: none;
+        font-weight: 900;
+        cursor: pointer;
+
+        height: 40px;
+        padding-bottom: 6px;
+        border-radius: $roundness * 1.5;
+
+        background: $hotkeyInput-bg-color;
+        color: $hotkeyInput-color;
+        box-shadow: 0px -6px 0px 0px $hotkeyInput-bg-color-shadow inset;
+
+        &:active {
+            padding-bottom: 0px;
+            padding-top: 3px;
+            box-shadow: 0px 3px 0px 0px $hotkeyInput-bg-color-shadow inset;
+        }
+
+        &.red {
+            background: $hotkeyInput-bg-color-red;
+            color: $hotkeyInput-color-red;
+            box-shadow: 0px -6px 0px 0px $hotkeyInput-bg-color-shadow-red inset;
+
+            &:active {
+                box-shadow: 0px 3px 0px 0px $hotkeyInput-bg-color-shadow-red inset;
+            }
+        }
+
+        &.width {
+            width: 9em;
+            font-size: 0.6em;
+        }
+    }
+}

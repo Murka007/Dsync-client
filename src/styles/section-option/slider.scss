@@ -1,0 +1,40 @@
+@import "../Variables.scss";
+
+@mixin slider {
+    .slider {
+        position: relative;
+        margin-right: 45px;
+
+        input {
+            -webkit-appearance: none;
+            outline: none;
+            cursor: pointer;
+
+            width: $checkbox-width * 2.2;
+            height: $checkbox-height / 1.2;
+            border-radius: $roundness * 2;
+
+            background: $hotkeyInput-bg-color;
+            box-shadow: 0px 5px 0px 0px $hotkeyInput-bg-color-shadow inset;
+
+            &::-webkit-slider-thumb {
+                -webkit-appearance: none;
+
+                width: $slider-size;
+                height: $slider-size;
+                border-radius: 50%;
+
+                background: $text-color;
+                box-shadow: 0px -5px 0px 0px $text-color-default inset;
+                border: 2px solid $hotkeyInput-color;
+            }
+        }
+
+        .slider-value {
+            position: absolute;
+            margin-left: 5px;
+            color: $option-color;
+            font-size: 0.65em;
+        }
+    }
+}

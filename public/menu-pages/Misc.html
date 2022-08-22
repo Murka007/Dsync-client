@@ -1,0 +1,146 @@
+<div class="menu-page">
+    <h1>Misc</h1>
+    <p>Customize misc settings, add autochat messages, reset settings</p>
+
+    <div class="section opened">
+        <div class="section-title">
+            <h2>Chat</h2>
+        </div>
+
+        <div class="section-content one-row">
+            
+            <div class="section-option">
+                <span class="section-option-title">Autochat</span>
+                <div class="content">
+                    <input class="input autochat" type="text" maxlength="35">
+                    <input class="input autochat" type="text" maxlength="35">
+                    <input class="input autochat" type="text" maxlength="35">
+                    <input class="input autochat" type="text" maxlength="35">
+                    <label class="switch-checkbox">
+                        <input id="autochat" type="checkbox">
+                        <span></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="section-option">
+                <span class="section-option-title">
+                    Message on kill
+                    <span class="tooltip">
+                        *
+                        <span class="tooltip-text left">
+                            <div>Variables:</div>
+                            <div><span class="highlight">{KILL}</span> - amount of kills</div>
+                            <div><span class="highlight">{NAME}</span> - name of the player you killed</div>
+                        </span>
+                    </span>
+                </span>
+                <div class="content">
+                    <input id="killMessage" class="input" type="text" maxlength="35">
+                    <label class="switch-checkbox">
+                        <input id="kill" type="checkbox">
+                        <span></span>
+                    </label>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="section opened">
+        <div class="section-title">
+            <h2>Other</h2>
+        </div>
+
+        <div class="section-content one-row">
+            
+            <div class="section-option">
+                <span class="section-option-title">Autospawn</span>
+                <label class="switch-checkbox">
+                    <input id="autospawn" type="checkbox">
+                    <span></span>
+                </label>
+            </div>
+
+            <div class="section-option">
+                <span class="section-option-title">
+                    Smooth zoom
+                    <span class="tooltip">
+                        *
+                        <span class="tooltip-text">Disable for performance</span>
+                    </span>
+                </span>
+                <label class="switch-checkbox">
+                    <input id="smoothZoom" type="checkbox">
+                    <span></span>
+                </label>
+            </div>
+
+            <div class="section-option">
+                <span class="section-option-title">
+                    Skip upgrades
+                    <span class="tooltip">
+                        *
+                        <span class="tooltip-text">When you have only 1 item in the upgradebar, it will automatically select it</span>
+                    </span>
+                </span>
+                <label class="switch-checkbox">
+                    <input id="skipUpgrades" type="checkbox">
+                    <span></span>
+                </label>
+            </div>
+
+            <div class="section-option">
+                <span class="section-option-title">
+                    Invis hit toggle
+                    <span class="tooltip">
+                        *
+                        <span class="tooltip-text">If enabled, invisible hit hotkey will work in toggle mode. Useful when you don't want to hold this button permanently</span>
+                    </span>
+                </span>
+                <label class="switch-checkbox">
+                    <input id="invisHitToggle" type="checkbox">
+                    <span></span>
+                </label>
+            </div>
+
+            <div class="section-option">
+                <span class="section-option-title">Reverse zoom</span>
+                <label class="switch-checkbox">
+                    <input id="reverseZoom" type="checkbox">
+                    <span></span>
+                </label>
+            </div>
+            
+        </div>
+    </div>
+
+    <div class="section opened">
+        <div class="section-title">
+            <h2>Menu</h2>
+        </div>
+
+        <div class="section-content one-row">
+
+            <div class="section-option">
+                <span class="section-option-title">Menu transparency</span>
+                <label class="switch-checkbox">
+                    <input id="menuTransparency" type="checkbox">
+                    <span></span>
+                </label>
+            </div>
+            
+            <div class="section-option">
+                <div class="content-double">
+                    <button id="reset-settings" class="button red">Reset settings</button>
+                    <button id="download-settings" class="button">Download settings</button>
+                    <div class="form-upload">
+                        <input id="upload-settings" type="file" accept=".txt">
+                        <span class="light">DRAG SETTINGS FILE HERE OR <span class="light-extra">BROWSE</span></span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>

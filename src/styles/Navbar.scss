@@ -1,0 +1,46 @@
+@import "Variables";
+
+#navbar-container {
+    display: flex;
+    flex-direction: column;
+    padding: $padding;
+    margin-right: $padding;
+    background: $sub-bg-color;
+
+    .open-menu {
+        outline: none;
+        border: none;
+        cursor: pointer;
+
+        font-weight: 900;
+        font-size: 1.4rem;
+        padding: $padding;
+
+        background: $nbar-btn-bg-color;
+        color: $text-color;
+        border-right: 1px solid;
+        border-right-color: transparent;
+
+        transition: background $delay, color $delay, border-right-color $delay;
+
+        &:hover {
+            background: $nbar-btn-bg-color-hover;
+        }
+
+        &:active {
+            background: $text-color;
+            color: $nbar-btn-bg-color;
+        }
+
+        &.active {
+            pointer-events: none;
+            background: $nbar-btn-bg-color-hover;
+            border-right-color: $text-color;
+        }
+    }
+
+    .bottom-align {
+        margin-bottom: 0px;
+        margin-top: auto!important;
+    }
+}

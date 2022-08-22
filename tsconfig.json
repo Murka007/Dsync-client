@@ -5,6 +5,7 @@
       "module": "es6",
       "target": "es6",
       "moduleResolution": "node",
-      "resolveJsonModule": true
+      "resolveJsonModule": true,
+      "sourceMap": false
     }
 }

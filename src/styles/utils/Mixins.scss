@@ -1,0 +1,15 @@
+@import "keyframes";
+
+@mixin appear($delay) {
+    animation: appear $delay forwards;
+}
+
+@mixin disappear($delay) {
+    animation: disappear $delay forwards;
+}
+
+@mixin text($color, $size, $weight) {
+    color: $color;
+    font-size: $size;
+    font-weight: $weight;
+}

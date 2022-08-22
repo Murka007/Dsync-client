@@ -1,0 +1,38 @@
+@import "../Variables.scss";
+
+@mixin hotkeyInput {
+    .section-option-hotkeyInput {
+        margin-right: 50px;
+        cursor: pointer;
+
+        font-weight: 900;
+        font-size: 0.6em;
+        padding-bottom: 8px;
+
+        outline: none;
+        border: none;
+        text-align: center;
+
+        width: 80px;
+        height: 35px;
+        border-radius: $roundness * 1.5;
+
+        background: $hotkeyInput-bg-color;
+        color: $hotkeyInput-color;
+        box-shadow: 0px -6px 0px 0px $hotkeyInput-bg-color-shadow inset;
+
+        &.red {
+            background: $hotkeyInput-bg-color-red;
+            color: $hotkeyInput-color-red;
+            box-shadow: 0px -6px 0px 0px $hotkeyInput-bg-color-shadow-red inset;
+        }
+
+        &:not([id]) {
+            cursor: not-allowed;
+        }
+
+        &.smaller {
+            font-size: 0.41em;
+        }
+    }
+}

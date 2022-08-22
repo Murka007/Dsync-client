@@ -1,0 +1,60 @@
+@import "../Variables.scss";
+
+@mixin form {
+    .form-upload {
+        position: relative;
+        font-size: 0.55em;
+        font-weight: 400;
+        letter-spacing: 1.5px;
+        text-align: center;
+
+        width: 100%;
+        border-radius: $roundness;
+        border: 2px dashed;
+        border-color: $hotkeyInput-color-opacity;
+        padding: $padding * 1.5 $padding;
+
+        transition: border-color $delay;
+    
+        &:hover {
+            border-color: $hotkeyInput-color;
+        }
+    
+        &.red {
+            border-color: $hotkeyInput-bg-color-red;
+            animation: failedTransition 400ms;
+    
+            .light {
+                color: $hotkeyInput-color-red;
+            }
+        }
+    
+        &.green {
+            border-color: $hotkeyInput-bg-color-green;
+    
+            .light {
+                color: $hotkeyInput-color-green;
+            }
+        }
+    
+        input {
+            position: absolute;
+            opacity: 0;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+    
+        .light {
+            color: $hotkeyInput-color;
+        }
+    
+        .light-extra {
+            color: $text-color-dark;
+        }
+    }
+}

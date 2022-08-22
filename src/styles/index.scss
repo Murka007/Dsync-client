@@ -1,0 +1,107 @@
+@import url('https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&display=swap');
+@import "Variables", "Header", "Navbar", "MenuPage", "./utils/Mixins", "./utils/keyframes";
+
+html, body {
+    margin: 0;
+    padding: 0;
+    background:
+    transparent!important;
+
+    scrollbar-width: 10px;
+    scrollbar-track-color: $sub-alt-bg-color;
+    scrollbar-face-color: $scrollbar-color;
+}
+
+* {
+    font-family: "Lato", sans-serif;
+}
+
+h1, h2, h3, h4, p {
+    margin: 0;
+}
+
+#menu-container {
+    font-weight: 900;
+    font-size: 2rem;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 1024px;
+    height: 700px;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    user-select: none;
+
+    &.open { @include appear(100ms) }
+
+    &.close { @include disappear(100ms) }
+
+    &.transparent {
+        #menu-wrapper { background: $bg-color-opacity }
+        #navbar-container { background: $sub-bg-color-opacity }
+        .menu-page { background: $sub-bg-color-opacity }
+        .section { background: $sub-alt-bg-color-opacity }
+    }
+}
+
+#menu-wrapper {
+    display: flex;
+    flex-direction: column;
+
+    width: 100%;
+    height: 80%;
+
+    background: $bg-color;
+    border-radius: $roundness;
+    padding: $padding;
+}
+
+main {
+    display: flex;
+    justify-content: space-between;
+    margin-top: $padding;
+    height: 100%;
+
+    #menu-page-container {
+        width: 100%;
+        height: 500px;
+        overflow-y: scroll;
+    }
+}
+
+.default-color {
+    outline: none;
+    border: none;
+    width: 10px;
+    height: 10px;
+    border-radius: 100%;
+    cursor: pointer;
+}
+
+input[id][type=color] {
+    outline: none;
+    border: none;
+    padding: 0 1px;
+    margin: 0;
+    height: 24px;
+    background-color: $hotkeyInput-bg-color;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+::-webkit-scrollbar {
+    width: 10px;
+}
+  
+::-webkit-scrollbar-track {
+    background: $sub-alt-bg-color;
+    border-radius: $roundness * 2;
+}
+
+::-webkit-scrollbar-thumb {
+    background: $scrollbar-color;
+    border-radius: $roundness * 2;
+}
