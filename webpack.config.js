@@ -36,6 +36,7 @@ const plugins = [
 // @name Dsync Client [Sploop.io]
 // @author Murka
 // @description The most advanced hack for sploop.io
+// @icon https://sploop.io/img/ui/favicon.png
 // @version ${version}
 // @match *://sploop.io/*
 // @run-at document-start
