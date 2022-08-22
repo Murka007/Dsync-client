@@ -2,7 +2,8 @@
 
 > The most advanced hack for sploop.io
 
-<img src="https://i.imgur.com/cNxhew1.png" height="275"/> <img src="https://i.imgur.com/tAhfJBJ.png" height="275"/>
+<img src="https://i.imgur.com/cNxhew1.png" width="500"/>
+<img src="https://i.imgur.com/tAhfJBJ.png" width="500"/>
 
 ### Basic features
 - Autoheal
