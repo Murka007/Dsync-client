@@ -2,6 +2,10 @@
 
 > The most advanced hack for sploop.io
 
+**DOWNLOAD ON GREASYFORK**: [Dsync client](https://greasyfork.org/en/scripts/449995-dsync-client-sploop-io)
+
+<br>
+
 <img src="https://i.imgur.com/cNxhew1.png" width="500"/>
 <img src="https://i.imgur.com/tAhfJBJ.png" width="500"/>
 
