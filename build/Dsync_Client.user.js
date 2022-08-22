@@ -18,7 +18,7 @@
     Greasyfork: https://greasyfork.org/en/users/919633
 
     PLEASE, I NEED YOUR SUPPORT ON GITHUB (GIVE ME A STAR ON MY REPOSITORY),
-    ALSO SUPPORT THIS SCRIPT ON GREASYFORK,
+    ALSO SUPPORT THIS SCRIPT ON GREASYFORK (register and write a comment: "this script works, thank you so much"),
     FOR MORE UPDATES JOIN MY DISCORD SERVER!!!
 */
 
