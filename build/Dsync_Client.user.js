@@ -2,7 +2,7 @@
 // @name Dsync Client [Sploop.io]
 // @author Murka
 // @description The most advanced hack for sploop.io
-// @version 1.0.8
+// @version 1.0.9
 // @match *://sploop.io/*
 // @run-at document-start
 // @grant none
@@ -27,7 +27,7 @@
     var __webpack_modules__ = {
         147: function(module) {
             module.exports = {
-                i8: "1.0.8"
+                i8: "1.0.9"
             };
         }
     };
