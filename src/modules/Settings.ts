@@ -110,7 +110,7 @@ export const defaultSettings: Readonly<ISettings> = {
     possibleShots: true,
 
     // Misc
-    autochat: false,
+    autochat: true,
     autochatMessages: [
         "Dsync Client",
         "What is it?",
