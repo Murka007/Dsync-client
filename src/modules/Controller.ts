@@ -1,7 +1,7 @@
 import { Dsync, log } from "..";
-import { EHats, EItems, EWeapons } from "../types";
+import { EHats, EItems, EWeapons, PlacementType } from "../types";
 import { inGame, isInput, sleep } from "../utils/Common";
-import { canShoot, getNearestPossibleEnemy, hasItemByType, hasSecondary, itemBar } from "../utils/Control";
+import { canShoot, getNearestPossibleEnemy, hasItemByType, hasSecondary, itemBar, upgradeScythe } from "../utils/Control";
 import settings from "./Settings";
 
 let move = 0;
@@ -73,13 +73,12 @@ const attack = (angle: number = null) => {
 }
 
 export const place = (id: number, angle: number = null) => {
+    whichWeapon();
+    if (attacking || autoattack) attack(angle);
     Dsync.selectItem(id);
     attack(angle);
     Dsync.stopAttack();
-    whichWeapon();
-    if (attacking) {
-        attack(angle);
-    }
+    if (settings.placementType !== PlacementType.HOLDING) whichWeapon();
 }
 
 let count = 0;
@@ -96,6 +95,12 @@ const placement = () => {
 
 const placementHandler = (type: number, code: string | number) => {
     if (!hasItemByType(type)) return;
+
+    if (settings.placementType === PlacementType.DEFAULT) {
+        Dsync.selectItem(type);
+        return;
+    }
+
     hotkeys.set(code, type);
     currentItem = type;
 
@@ -104,7 +109,7 @@ const placementHandler = (type: number, code: string | number) => {
     }
 }
 
-const heal = () => {
+export const heal = () => {
     Dsync.selectItem(EItems.HEAL);
     attack();
     Dsync.stopAttack();
@@ -136,7 +141,7 @@ const invisibleHit = () => {
     let angle = null;
     const enemy = getNearestPossibleEnemy(+!weapon);
     const shoot = canShoot() && !weapon;
-    if (enemy) {
+    if (enemy && (settings.meleeAim && !shoot || settings.bowAim && shoot)) {
         angle = enemy.dir;
         Dsync.mousemove = false;
         Dsync.aimTarget = enemy.target;
@@ -154,9 +159,11 @@ const invisibleHit = () => {
 const spikeInsta = () => {
 
     let angle = null;
-    const enemy = getNearestPossibleEnemy(0);
-    if (enemy) {
-        angle = enemy.dir;
+    if (settings.spikeInstaAim) {
+        const enemy = getNearestPossibleEnemy(0);
+        if (enemy) {
+            angle = enemy.dir;
+        }
     }
 
     const oldWeapon = weapon;
@@ -237,16 +244,16 @@ const handleKeydown = (event: KeyboardEvent | MouseEvent, code: string | number)
     if (code === settings.spawn) placementHandler(EItems.SPAWN, code);
 
     if (code === settings.unequip) equipHat(Dsync.myPlayer.hat, true);
-    if (code === settings.bush) equipHat(EHats.BUSH); 
-    if (code === settings.berserker) equipHat(EHats.BERSERKER); 
-    if (code === settings.jungle) equipHat(EHats.JUNGLE); 
-    if (code === settings.crystal) equipHat(EHats.CRYSTAL); 
-    if (code === settings.spikegear) equipHat(EHats.SPIKEGEAR); 
-    if (code === settings.immunity) equipHat(EHats.IMMUNITY); 
-    if (code === settings.boost) equipHat(EHats.BOOST); 
-    if (code === settings.applehat) equipHat(EHats.APPLEHAT); 
-    if (code === settings.scuba) equipHat(EHats.SCUBA); 
-    if (code === settings.hood) equipHat(EHats.HOOD); 
+    if (code === settings.bush) equipHat(EHats.BUSH);
+    if (code === settings.berserker) equipHat(EHats.BERSERKER);
+    if (code === settings.jungle) equipHat(EHats.JUNGLE);
+    if (code === settings.crystal) equipHat(EHats.CRYSTAL);
+    if (code === settings.spikegear) equipHat(EHats.SPIKEGEAR);
+    if (code === settings.immunity) equipHat(EHats.IMMUNITY);
+    if (code === settings.boost) equipHat(EHats.BOOST);
+    if (code === settings.applehat) equipHat(EHats.APPLEHAT);
+    if (code === settings.scuba) equipHat(EHats.SCUBA);
+    if (code === settings.hood) equipHat(EHats.HOOD);
     if (code === settings.demolist) equipHat(EHats.DEMOLIST); 
 
     if (code === settings.invisibleHit && hasSecondary()) {
@@ -283,6 +290,7 @@ const handleKeydown = (event: KeyboardEvent | MouseEvent, code: string | number)
     }
 
     if (code === settings.lockRotation) Dsync.toggleRotation();
+    if (code === settings.upgradeScythe) upgradeScythe();
 }
 
 const handleKeyup = (event: KeyboardEvent | MouseEvent, code: string | number) => {
@@ -311,6 +319,10 @@ const handleKeyup = (event: KeyboardEvent | MouseEvent, code: string | number) =
     if (currentItem !== null && hotkeys.delete(code)) {
         const entries = [...hotkeys];
         currentItem = entries.length ? entries[entries.length-1][1] : null;
+
+        if (currentItem === null) {
+            whichWeapon();
+        }
     }
 }
 

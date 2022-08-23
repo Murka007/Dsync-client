@@ -11,7 +11,7 @@
             cursor: pointer;
 
             width: $checkbox-width * 2.2;
-            height: $checkbox-height / 1.2;
+            height: calc($checkbox-height / 1.2);
             border-radius: $roundness * 2;
 
             background: $hotkeyInput-bg-color;

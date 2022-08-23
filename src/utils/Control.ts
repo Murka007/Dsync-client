@@ -1,26 +1,36 @@
 import { Dsync, log } from ".."
 import { teammates } from "../hooks/clanHandler";
-import { EAnimals, EItems, EItemTypes, ELayer, EWeapons, IEntity, IPlayer, LayerExclude, LayerObjects, TObjectAny } from "../types";
-import { distance, formatEntity, formatObject, formatPlayer, getAngle } from "./Common";
+import { EAnimals, EItems, EItemTypes, ELayer, EWeapons, IEntity, IPlayer, LayerExclude, LayerObjects } from "../types";
+import { distance, formatEntity, formatObject, getAngle } from "./Common";
 
 export const itemBar = (index: number) => {
     return Dsync.defaultData[Dsync.props.itemBar][index];
 }
 export const hasSecondary = () => {
-    const id = itemBar(1);
-    const item = Dsync.itemData[id];
+    const item = Dsync.itemData[itemBar(1)];
     return item[Dsync.props.itemType] === EItems.SECONDARY;
 }
 
 export const canShoot = () => {
-    const id = itemBar(1);
-    const item = Dsync.itemData[id];
+    const item = Dsync.itemData[itemBar(1)];
     return item[Dsync.props.itemDataType] === EItemTypes.SHOOTING;
 }
 
 export const hasItemByType = (type: number) => {
     const items: number[] = Dsync.defaultData[Dsync.props.itemBar];
     return items.some(id => Dsync.itemData[id][Dsync.props.itemType] === type);
+}
+
+export const isStoneGold = () => {
+    const item = Dsync.itemData[itemBar(0)];
+    return [1, 2].includes(item[Dsync.props.weaponType]);
+}
+
+export const upgradeScythe = () => {
+    const goldenCowID = Dsync.goldenCowID();
+    if (goldenCowID) {
+        Dsync.upgradeScythe(goldenCowID);
+    }
 }
 
 export const getAnimals = (): IEntity[] => {

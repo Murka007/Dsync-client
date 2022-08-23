@@ -1,4 +1,4 @@
-import { ISettings, PlacementMode } from "../types";
+import { ISettings, PlacementType } from "../types";
 
 interface IStorage {
     get(key: string): any;
@@ -46,6 +46,7 @@ export const defaultSettings: Readonly<ISettings> = {
     spikeInsta: "KeyR",
     toggleMenu: "Escape",
     fastBreak: "KeyZ",
+    upgradeScythe: "...",
 
     // hats
     unequip: "...",
@@ -62,13 +63,16 @@ export const defaultSettings: Readonly<ISettings> = {
     demolist: "...",
 
     // Combat
-    placementMode: PlacementMode.AUTOMATIC,
-    placementSpeed: 15,
+    placementType: PlacementType.INVISIBLE,
+    placementSpeed: 1,
     autoheal: true,
     autohealDelay: 80,
     jungleOnClown: true,
     lastHat: true,
     autoScuba: true,
+    meleeAim: true,
+    bowAim: true,
+    spikeInstaAim: true,
 
     // Visuals
     enemyTracers: true,
@@ -85,6 +89,8 @@ export const defaultSettings: Readonly<ISettings> = {
     showHoods: true,
     itemCounter: true,
     drawID: false,
+    visualAim: true,
+    hideNicknames: false,
 
     itemMarkers: true,
     teammateMarkers: true,
@@ -124,6 +130,8 @@ export const defaultSettings: Readonly<ISettings> = {
     skipUpgrades: true,
     invisHitToggle: false,
     reverseZoom: false,
+    autoScythe: true,
+    
     menuTransparency: false,
 };
 

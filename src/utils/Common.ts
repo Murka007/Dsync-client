@@ -262,6 +262,10 @@ export const drawBar = (ctx: TCTX, entity: IEntity | IObject, value: number, max
     const h = entity.type === ELayer.TURRET ? 25 : 50;
 
     ctx.save();
+    if (settings.markersBottom && entity.type === ELayer.TURRET) {
+        ctx.rotate(Math.PI - entity.angle);
+        ctx.rotate(Math.PI);
+    }
     ctx.translate(x, y + radius + h + front.height * scale);
     drawImage(ctx, background);
     ctx.fillStyle = color;
@@ -412,4 +416,8 @@ export const download = (data: TObjectAny, filename: string) => {
     a.click();
     a.remove();
     URL.revokeObjectURL(url);
+}
+
+export const capitalize = (word: string) => {
+    return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
 }

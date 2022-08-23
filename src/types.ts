@@ -38,6 +38,7 @@ interface IProps {
     renderLayer?: string;
     currentItem?: string;
     rotSpeed?: string;
+    weaponType?: string;
 }
 
 export type TObjectAny = { [key: string]: any };
@@ -147,6 +148,7 @@ export interface ISettings {
     spikeInsta: StringNumber;
     toggleMenu: StringNumber;
     fastBreak: StringNumber;
+    upgradeScythe: StringNumber;
 
     // hats
     unequip: StringNumber;
@@ -164,12 +166,15 @@ export interface ISettings {
 
     // Combat
     placementSpeed: number;
-    placementMode: number;
+    placementType: number;
     autoheal: boolean;
     autohealDelay: number;
     jungleOnClown: boolean;
     lastHat: boolean;
     autoScuba: boolean;
+    meleeAim: boolean;
+    bowAim: boolean;
+    spikeInstaAim: boolean;
 
     // Visuals
     enemyTracers: boolean;
@@ -186,6 +191,8 @@ export interface ISettings {
     drawHP: boolean;
     itemCounter: boolean;
     drawID: boolean;
+    visualAim: boolean;
+    hideNicknames: boolean;
 
     itemMarkers: boolean;
     teammateMarkers: boolean;
@@ -220,6 +227,7 @@ export interface ISettings {
     skipUpgrades: boolean;
     invisHitToggle: boolean;
     reverseZoom: boolean;
+    autoScythe: boolean;
 
     menuTransparency: boolean;
 
@@ -408,8 +416,12 @@ export enum EAnimals {
     DUCK = 36,
 }
 
-export enum PlacementMode {
+export enum PlacementType {
+    DEFAULT,
     INVISIBLE,
-    HOLDING,
-    AUTOMATIC
+    HOLDING
+}
+
+export const selectData = {
+    placementType: PlacementType
 }

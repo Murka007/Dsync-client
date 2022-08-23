@@ -23,7 +23,8 @@ class BannerPlugin {
             for (const chunk of compilation.chunks) {
                 for (const filename of chunk.files) {
                     const asset = compilation.assets[filename];
-                    asset._value = this.banner + asset._value;
+                    const code = asset._value.match(/^(\(\(\)\s*=>\s*\{.+)\(\);?$/ms)[1];
+                    asset._value = this.banner.replace(/\{CODE\}/, code);
                 }
             }
             callback();
@@ -32,7 +33,21 @@ class BannerPlugin {
 }
 
 const plugins = [
-    new BannerPlugin(`// ==UserScript==
+    new WatchExternalFilesPlugin({
+        files: [
+            "./src/**/**/*",
+            "./src/**/*",
+            "./src/*",
+            "./public/**/**/*",
+            "./public/**/*",
+            "./public/*",
+        ]
+    })
+];
+
+if (isProd) {
+    plugins.push(
+        new BannerPlugin(`// ==UserScript==
 // @name Dsync Client [Sploop.io]
 // @author Murka
 // @description The most advanced hack for sploop.io
@@ -55,18 +70,9 @@ const plugins = [
     PLEASE, I NEED YOUR SUPPORT ON GITHUB (GIVE ME A STAR ON MY REPOSITORY),
     ALSO SUPPORT THIS SCRIPT ON GREASYFORK (register and write a comment: "this script works, thank you so much"),
     FOR MORE UPDATES JOIN MY DISCORD SERVER!!!
-*/\n\n`),
-    new WatchExternalFilesPlugin({
-        files: [
-            "./src/**/**/*",
-            "./src/**/*",
-            "./src/*",
-            "./public/**/**/*",
-            "./public/**/*",
-            "./public/*",
-        ]
-    })
-];
+*/\n\nFunction("(" + {CODE}.toString() + ")();")();`)
+    )
+}
 
 if (!process.env.MODE.endsWith("-tamper")) {
     plugins.push(
@@ -85,7 +91,7 @@ if (!process.env.MODE.endsWith("-tamper")) {
 
 module.exports = {
     mode: MODE,
-    target: ["web", "es5"],
+    target: ["web", "es2020"],
     entry: "./src/index.ts",
     output: {
         filename: "Dsync_Client.user.js",
@@ -98,6 +104,8 @@ module.exports = {
                 terserOptions: {
                     compress: false,
                     mangle: false,
+                    parse: false,
+                    output: false,
                     format: {
                         beautify: true
                     }

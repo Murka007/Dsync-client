@@ -1,0 +1,18 @@
+@import "../Variables.scss";
+
+@mixin select {
+    select[id] {
+        outline: none;
+        border: none;
+        font-weight: 900;
+        
+        width: $input-width * 1.5;
+        font-size: 0.6em;
+        border-radius: $roundness * 1.5;
+        padding: 2.5px;
+
+        background: $hotkeyInput-bg-color;
+        color: $hotkeyInput-color;
+        box-shadow: 0px 4px 0px 0px $hotkeyInput-bg-color-shadow inset;
+    }
+}

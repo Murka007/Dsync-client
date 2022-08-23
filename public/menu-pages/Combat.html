@@ -23,6 +23,11 @@
                 </label>
             </div>
 
+            <div class="section-option">
+                <span class="section-option-title">Placement type</span>
+                <select id="placementType"></select>
+            </div>
+
         </div>
     </div>
     
@@ -42,13 +47,13 @@
                     </label>
                 </div>
     
-                <div class="section-option">
+                <!-- <div class="section-option">
                     <span class="section-option-title">Healing delay</span>
                     <label class="slider">
                         <input id="autohealDelay" min="0" max="150" type="range">
                         <span class="slider-value">150</span>
                     </label>
-                </div>
+                </div> -->
             </div>
 
         </div>
@@ -93,6 +98,43 @@
                 </div>
             </div>
 
+        </div>
+    </div>
+
+    <div class="section opened">
+        <div class="section-title">
+            <h2>Autoaim</h2>
+        </div>
+
+        <div class="section-content">
+            
+            <div class="split-section">
+
+                <div class="section-option">
+                    <span class="section-option-title">Melee</span>
+                    <label class="switch-checkbox">
+                        <input id="meleeAim" type="checkbox">
+                        <span></span>
+                    </label>
+                </div>
+
+                <div class="section-option">
+                    <span class="section-option-title">Bow</span>
+                    <label class="switch-checkbox">
+                        <input id="bowAim" type="checkbox">
+                        <span></span>
+                    </label>
+                </div>
+
+                <div class="section-option">
+                    <span class="section-option-title">Spike insta</span>
+                    <label class="switch-checkbox">
+                        <input id="spikeInstaAim" type="checkbox">
+                        <span></span>
+                    </label>
+                </div>
+
+            </div>
         </div>
     </div>
 </div>

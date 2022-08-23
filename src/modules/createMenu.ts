@@ -6,10 +6,11 @@ import Visuals from "../../public/menu-pages/Visuals.html";
 import Misc from "../../public/menu-pages/Misc.html";
 import Credits from "../../public/menu-pages/Credits.html";
 import CSS from "../styles/index.scss";
-import { contains, download, formatCode, removeClass } from "../utils/Common";
+import { capitalize, contains, download, formatCode, removeClass } from "../utils/Common";
 import settings, { defaultSettings, storage } from "./Settings";
 import { Dsync, log } from "..";
 import { handleKeydown, handleKeyup } from "./Controller";
+import { selectData } from "../types";
 
 const createMenu = () => {
 
@@ -88,8 +89,30 @@ const createMenu = () => {
         const uploadSettings = iframeDocument.querySelector("#upload-settings") as HTMLInputElement;
         const menuTransparency = iframeDocument.querySelector("#menuTransparency") as HTMLInputElement;
         const colorPickers = iframeDocument.querySelectorAll("input[type='color'][id]") as NodeListOf<HTMLInputElement>;
+        const selects = iframeDocument.querySelectorAll("select[id]") as NodeListOf<HTMLSelectElement>;
 
         const update = () => {
+
+            for (const select of selects) {
+                const data = selectData[select.id as keyof typeof selectData];
+                for (const key in data) {
+                    if (!isNaN(Number(key))) continue;
+
+                    const option = document.createElement("option");
+                    option.value = data[key];
+                    option.textContent = capitalize(key);
+                    if (data[key] === settings[select.id]) {
+                        option.selected = true;
+                        option.defaultSelected = true;
+                    }
+                    select.appendChild(option);
+                }
+
+                select.onchange = () => {
+                    settings[select.id] = Number(select.value);
+                    storage.set("Dsync-settings", settings);
+                }
+            }
 
             for (const picker of colorPickers) {
                 

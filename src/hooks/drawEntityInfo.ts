@@ -19,7 +19,7 @@ const drawEntityInfo = (
         }
         if (Dsync.aimTarget) {
             const aimTarget = formatEntity(Dsync.aimTarget);
-            Dsync.target[Dsync.props.angle] = getAngle(aimTarget, entity).lerpAngle;
+            Dsync.target[Dsync.props.angle] = settings.visualAim ? getAngle(aimTarget, entity).lerpAngle : Dsync.getAngle();
         }
     }
     drawHealth(ctx, entity);
@@ -47,7 +47,7 @@ const drawEntityInfo = (
         // x: entity.x + w / 2 + 5,
         // y: entity.y - h + (entity.radius + 50) + 5
 
-        renderText(ctx, entity.id.toString(), (width, height) => {
+        renderText(ctx, entity.id.toString(), () => {
             return [
                 entity.x + w / 2 + 5,
                 entity.y - h + (entity.radius + 50) + 5

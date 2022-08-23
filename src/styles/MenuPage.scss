@@ -1,4 +1,4 @@
-@import "Variables", "./utils/Mixins", "./section-option/hotkeyInput", "./section-option/checkbox", "./section-option/slider", "./section-option/input", "./section-option/button", "./section-option/form", "./section-option/tooltip";
+@import "Variables", "./utils/Mixins", "./section-option/hotkeyInput", "./section-option/checkbox", "./section-option/slider", "./section-option/input", "./section-option/button", "./section-option/form", "./section-option/tooltip", "./section-option/select";
 
 .menu-page {
     display: none;
@@ -163,6 +163,7 @@
                 @include button;
                 @include form;
                 @include tooltip;
+                @include select;
             }
         }
 

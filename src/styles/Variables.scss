@@ -38,7 +38,7 @@ $nbar-btn-bg-color-hover: #313135;
 
 $roundness: 5px;
 $padding: 10px;
-$padding-less: $padding / 2;
+$padding-less: calc($padding / 2);
 
 $delay: 100ms;
 $pageDelay: 300ms;

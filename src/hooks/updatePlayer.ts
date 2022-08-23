@@ -1,13 +1,25 @@
 import { Dsync } from "..";
-import { autochat, equipHat, fastBreakHat, fastBreaking, place } from "../modules/Controller";
+import { autochat, equipHat, fastBreakHat, fastBreaking, heal } from "../modules/Controller";
 import settings from "../modules/Settings";
-import { EHats, EItems, ELayer, TObjectAny } from "../types";
-import { distance, formatEntity, formatPlayer, formatProjectile } from "../utils/Common";
-import { entityIn } from "../utils/Control";
+import { EHats, ELayer, TObjectAny } from "../types";
+import { distance, formatEntity, formatPlayer, formatProjectile, inGame } from "../utils/Common";
+import { isStoneGold, upgradeScythe } from "../utils/Control";
 
 let toggleClown = false;
 let toggleScuba = false;
-let playerHealth = 100;
+let isHealing = false;
+
+const getDelay = (health: number) => {
+    if (health < 74) return 60;
+    if (health < 36) return 45;
+    return 130;
+}
+
+const healing = () => {
+    const { health, maxHealth, isClown } = Dsync.myPlayer;
+    if (settings.autoheal && health < maxHealth && !isClown && inGame()) heal();
+    setTimeout(healing, getDelay(health));
+}
 
 const updatePlayer = (target: TObjectAny) => {
     const entity = formatEntity(target);
@@ -23,24 +35,11 @@ const updatePlayer = (target: TObjectAny) => {
                 }
             }
 
-            const { x2, y2, angle2, health, maxHealth, isClown, hat, oldHat } = Dsync.myPlayer;
+            const { y2, health, maxHealth, isClown, hat, oldHat } = Dsync.myPlayer;
 
-            const inTornado = entityIn(Dsync.myPlayer, ELayer.TORNADO);
-            const diff = Math.abs(health - playerHealth);
-            const restore = Dsync.defaultData[Dsync.props.itemBar].includes(12) ? 35 : 20;
-            let times = 0;
-            if (
-                settings.autoheal &&
-                health < maxHealth - (inTornado ? (restore - 5) : 10) &&
-                !isClown &&
-                (diff > 3 || diff === 0)
-            ) {
-                playerHealth = health;
-                times = Math.max(1, Math.ceil((maxHealth - health) / restore));
-
-                setTimeout(() => {
-                    for (let i=0;i<=times;i++) place(EItems.HEAL);
-                }, settings.autohealDelay);
+            if (settings.autoheal && health < maxHealth && !isHealing) {
+                isHealing = true;
+                healing();
             }
 
             const inRiver = y2 > 8075 && y2 < 8925;
@@ -77,6 +76,10 @@ const updatePlayer = (target: TObjectAny) => {
                 toggleClown = false;
             }
             if (settings.autochat) autochat();
+
+            if (settings.autoScythe && Dsync.entityList()[ELayer.GOLDENCOW].length && !isStoneGold()) {
+                upgradeScythe();
+            }
         }
 
         if (settings.hatReloadBar) {

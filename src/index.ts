@@ -4,7 +4,6 @@ import Regex from "./modules/Regex";
 import settings, { storage } from "./modules/Settings";
 import { inGame, isInput, linker } from "./utils/Common";
 const version = require("../package.json").version;
-// import { version } from "../package.json";
 import stringMessage from "./hooks/stringMessage";
 import drawItemBar from "./hooks/drawItemBar";
 import drawEntityInfo from "./hooks/drawEntityInfo";
@@ -344,6 +343,15 @@ window.eval = new Proxy(window.eval, {
                 [/const/, /\w+/, /=/, /\+/, /new/, /\w+/, /;/],
                 `if(Dsync.hooks.moveUpdate){Dsync.hooks.moveUpdate();}`
             );
+
+            Hook.replace(
+                "hideNicknames",
+                [`(const`, /\w+/, /=/, /\w+\.\w+/, `\\|\\|.+),`, `(\\w+`, /\(/, /ARGS{3}/, `&&)`],
+                `if(!Dsync.settings.hideNicknames){$1}$2`
+            );
+
+            const weaponType = Hook.match("weaponType", [/(\w+)/, /:/, /\w+\.\w+/, /,/, `${Dsync.props.id}`, /:/, /\w+\.\w+/, /,/])[1];
+            Dsync.props.weaponType = weaponType;
 
             args[0] = Hook.code;
             window.eval = target;
