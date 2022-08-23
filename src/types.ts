@@ -396,7 +396,8 @@ export enum EHats {
 export enum EWeapons {
     SHIELD = 11,
     STICK = 13,
-    HAMMER = 15
+    HAMMER = 15,
+    SCYTHE = 57
 }
 
 export enum EItemTypes {

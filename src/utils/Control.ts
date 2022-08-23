@@ -1,7 +1,7 @@
 import { Dsync, log } from ".."
 import { teammates } from "../hooks/clanHandler";
 import { EAnimals, EItems, EItemTypes, ELayer, EWeapons, IEntity, IPlayer, LayerExclude, LayerObjects } from "../types";
-import { distance, formatEntity, formatObject, getAngle } from "./Common";
+import { distance, formatEntity, formatObject, getAngle, sleep } from "./Common";
 
 export const itemBar = (index: number) => {
     return Dsync.defaultData[Dsync.props.itemBar][index];
@@ -26,10 +26,14 @@ export const isStoneGold = () => {
     return [1, 2].includes(item[Dsync.props.weaponType]);
 }
 
-export const upgradeScythe = () => {
+let scytheToggle = false;
+export const upgradeScythe = async () => {
     const goldenCowID = Dsync.goldenCowID();
-    if (goldenCowID) {
+    if (goldenCowID && itemBar(0) !== EWeapons.SCYTHE && !scytheToggle) {
+        scytheToggle = true;
         Dsync.upgradeScythe(goldenCowID);
+        await sleep(200);
+        scytheToggle = false;
     }
 }
 
