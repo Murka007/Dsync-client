@@ -139,7 +139,6 @@ export interface ISettings {
     down: StringNumber;
     right: StringNumber;
 
-    attack: StringNumber;
     autoattack: StringNumber;
     lockRotation: StringNumber;
     openChat: StringNumber;
@@ -168,7 +167,6 @@ export interface ISettings {
     placementSpeed: number;
     placementType: number;
     autoheal: boolean;
-    autohealDelay: number;
     jungleOnClown: boolean;
     lastHat: boolean;
     autoScuba: boolean;

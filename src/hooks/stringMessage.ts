@@ -28,6 +28,7 @@ const stringMessage = (data: [number, ...any[]]) => {
         const message = killMessage.replace(/\{KILL\}/g, kills+"").replace(/\{NAME\}/g, name);
         Dsync.chat(message);
     }
+    log(data);
 }
 
 export default stringMessage;

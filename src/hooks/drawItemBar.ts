@@ -1,8 +1,8 @@
 import { Dsync } from "..";
 import settings from "../modules/Settings";
 import { TCTX, TObjectAny } from "../types";
-import { renderText } from "../utils/Common";
 import { itemBar } from "../utils/Control";
+import { renderText } from "../utils/Rendering";
 
 const drawItemBar = (ctx: TCTX, imageData: TObjectAny, index: number) => {
     if (!settings.itemCounter) return;

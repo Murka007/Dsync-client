@@ -276,7 +276,7 @@ const handleKeydown = (event: KeyboardEvent | MouseEvent, code: string | number)
     if (copyMove !== move) Dsync.move(move);
 
     // Handle mouse attack, item selection
-    if (event instanceof MouseEvent && code === settings.attack) {
+    if (event instanceof MouseEvent && code === 0/* settings.attack */) {
         const canAttack = !Dsync.mousedown(event);
         if (canAttack && Dsync.mousemove) {
             attacking = true;
@@ -311,7 +311,7 @@ const handleKeyup = (event: KeyboardEvent | MouseEvent, code: string | number) =
     if (code === settings.right) move &= -9;
     if (copyMove !== move) Dsync.move(move);
 
-    if (event instanceof MouseEvent && code === settings.attack) {
+    if (event instanceof MouseEvent && code === 0) {
         Dsync.mouseup(event);
         attacking = false;
     }

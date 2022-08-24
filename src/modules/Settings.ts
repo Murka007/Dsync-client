@@ -37,7 +37,6 @@ export const defaultSettings: Readonly<ISettings> = {
     down: "KeyS",
     right: "KeyD",
 
-    attack: 0,
     autoattack: "KeyE",
     lockRotation: "KeyX",
     openChat: "Enter",
@@ -66,7 +65,6 @@ export const defaultSettings: Readonly<ISettings> = {
     placementType: PlacementType.INVISIBLE,
     placementSpeed: 1,
     autoheal: true,
-    autohealDelay: 80,
     jungleOnClown: true,
     lastHat: true,
     autoScuba: true,

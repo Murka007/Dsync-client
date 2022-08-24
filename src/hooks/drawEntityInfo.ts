@@ -1,9 +1,10 @@
 import { Dsync, log } from "..";
 import settings from "../modules/Settings";
 import { ELayer, TCTX, TObjectAny } from "../types";
-import { crosshair, drawBar, drawHealth, drawTracers, formatEntity, getAngle, getTracerColor, renderText } from "../utils/Common";
+import { formatEntity, getAngle } from "../utils/Common";
 import { projectileCanHitEntity } from "../utils/Control";
 import Images from "../utils/Images";
+import { crosshair, drawBar, drawHealth, drawTracers, getTracerColor, renderText } from "../utils/Rendering";
 
 const drawEntityInfo = (
     target: TObjectAny,

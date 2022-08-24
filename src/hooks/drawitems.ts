@@ -1,7 +1,8 @@
 import { Dsync, log } from "..";
 import settings from "../modules/Settings";
 import { ELayer, TCTX, TObjectAny } from "../types";
-import { drawBar, formatObject, getMarkerColor, marker, windmillRotation } from "../utils/Common";
+import { formatObject } from "../utils/Common";
+import { drawBar, getMarkerColor, marker, windmillRotation } from "../utils/Rendering";
 
 const drawItems = (target: TObjectAny, id: number, ctx: TCTX, step: number) => {
     const object = formatObject(target);
