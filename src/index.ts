@@ -62,7 +62,7 @@ window.eval = new Proxy(window.eval, {
             );
 
             // Prevent from executing debugger
-            Hook.replace("Debugger fix", [/debugger/], ``, "g");
+            Hook.replace("Debugger fix", /debugger/, ``, "g");
 
             const selectItem = Hook.match("selectItem", [/!/, /\w+/, /\[/, /\w+/, /\]/, /&&/, /(\w+)/, /\(/, /\d/, /\)/, /,/])[1];
             sendFunction("selectItem", selectItem);
@@ -346,8 +346,8 @@ window.eval = new Proxy(window.eval, {
 
             Hook.replace(
                 "hideNicknames",
-                [`(const`, /\w+/, /=/, /\w+\.\w+/, `\\|\\|.+),`, `(\\w+`, /\(/, /ARGS{3}/, `&&)`],
-                `if(!Dsync.settings.hideNicknames){$1}$2`
+                [`(const`, /\w+/, /=/, /\w+\.\w+/, `\\|\\|.+),`, `(?=\\w+`, /\(/, /ARGS{3}/, `&&)`],
+                `if(!Dsync.settings.hideNicknames){$1}`
             );
 
             const weaponType = Hook.match("weaponType", [/(\w+)/, /:/, /\w+\.\w+/, /,/, `${Dsync.props.id}`, /:/, /\w+\.\w+/, /,/])[1];
