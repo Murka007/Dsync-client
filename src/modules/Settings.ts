@@ -112,6 +112,7 @@ export const defaultSettings: Readonly<ISettings> = {
 
     windmillRotation: false,
     possibleShots: true,
+    hideMessages: false,
 
     // Misc
     autochat: true,
@@ -129,6 +130,7 @@ export const defaultSettings: Readonly<ISettings> = {
     invisHitToggle: false,
     reverseZoom: false,
     autoScythe: true,
+    autoAccept: false,
     
     menuTransparency: false,
 };

@@ -1,5 +1,5 @@
 import { Dsync } from "..";
-import { autochat, equipHat, fastBreakHat, fastBreaking, heal } from "../modules/Controller";
+import { accept, autochat, equipHat, fastBreakHat, fastBreaking, heal } from "../modules/Controller";
 import settings from "../modules/Settings";
 import { EHats, ELayer, TObjectAny } from "../types";
 import { distance, formatEntity, formatPlayer, formatProjectile, inGame } from "../utils/Common";
@@ -79,6 +79,10 @@ const updatePlayer = (target: TObjectAny) => {
 
             if (settings.autoScythe && Dsync.entityList()[ELayer.GOLDENCOW].length && !isStoneGold()) {
                 upgradeScythe();
+            }
+
+            if (settings.autoAccept && Dsync.clanData[Dsync.props.acceptList].length) {
+                accept(true);
             }
         }
 

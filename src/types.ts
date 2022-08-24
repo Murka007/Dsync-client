@@ -39,6 +39,7 @@ interface IProps {
     currentItem?: string;
     rotSpeed?: string;
     weaponType?: string;
+    acceptList?: string;
 }
 
 export type TObjectAny = { [key: string]: any };
@@ -89,7 +90,9 @@ declare global {
             MoveByAngle?(angle: number): void;
             upgradeItem?(id: number): void;
             upgradeScythe?(goldenCowID: number): void;
+            accept?(accept: boolean): void;
 
+            clanData: TObjectAny;
             goldenCowID?(): number;
             mousedown?(event: MouseEvent): boolean;
             mouseup?(event: MouseEvent): void;
@@ -214,6 +217,7 @@ export interface ISettings {
 
     windmillRotation: boolean;
     possibleShots: boolean;
+    hideMessages: boolean;
 
     // Misc
     autochat: boolean;
@@ -226,6 +230,7 @@ export interface ISettings {
     invisHitToggle: boolean;
     reverseZoom: boolean;
     autoScythe: boolean;
+    autoAccept: boolean;
 
     menuTransparency: boolean;
 

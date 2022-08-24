@@ -14,6 +14,11 @@ let toggleInvis = false;
 let currentItem: number = null;
 const hotkeys = new Map<string | number, number>();
 
+export const accept = (accept: boolean) => {
+    Dsync.accept(accept);
+    Dsync.clanData[Dsync.props.acceptList].shift();
+}
+
 export const spawn = async () => {
     await sleep(100);
     const play = document.querySelector("#play") as HTMLDivElement;

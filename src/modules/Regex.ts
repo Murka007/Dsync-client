@@ -94,7 +94,9 @@ class Regex {
 
     private template(type: number, name: string, regex: TRegex, substr: string) {
         const expression = new RegExp(`(${ this.format(name, regex).source })`);
+        const match = this.code.match(expression);
         this.code = this.code.replace(expression, type === Template.APPEND ? ("$1" + substr) : (substr + "$1"));
+        return match;
     }
 
     match(name: string, regex: TRegex, flags?: string, debug: boolean = false) {
@@ -127,11 +129,11 @@ class Regex {
     }
 
     append(name: string, regex: TRegex, substr: string) {
-        this.template(Template.APPEND, name, regex, substr);
+        return this.template(Template.APPEND, name, regex, substr);
     }
 
     prepend(name: string, regex: TRegex, substr: string) {
-        this.template(Template.PREPEND, name, regex, substr);
+        return this.template(Template.PREPEND, name, regex, substr);
     }
 
     insert(name: string, regex: TRegex, substr: string) {

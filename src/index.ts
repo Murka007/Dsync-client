@@ -35,7 +35,8 @@ window.Dsync = {
     itemList: [],
     mousemove: true,
     aimTarget: null,
-    step: 0
+    step: 0,
+    clanData: null
 };
 export const Dsync = window.Dsync;
 storage.delete("_adIds");
@@ -352,6 +353,26 @@ window.eval = new Proxy(window.eval, {
 
             const weaponType = Hook.match("weaponType", [/(\w+)/, /:/, /\w+\.\w+/, /,/, `${Dsync.props.id}`, /:/, /\w+\.\w+/, /,/])[1];
             Dsync.props.weaponType = weaponType;
+
+            Hook.append(
+                "playerMessage",
+                [/\(/, /\w+/, /\)/, /\}/, /,/, /this/, /\./, /\w+/, /=/, /function/, /\(/, /ARGS{2}/, /\)/, /\{/],
+                "if(Dsync.settings.hideMessages)return;"
+            );
+
+            Hook.append(
+                "teamMessage",
+                [/ARGS{7}/, /\)/, /\}/, /,/, /this/, /\./, /\w+/, /=/, /function/, /\(/, /ARGS{2}/, /\)/, /\{/],
+                "if(Dsync.settings.hideMessages)return;"
+            );
+
+            const [,, accept, clanData, acceptList] = Hook.append(
+                "autoAccept",
+                [/\(/, /(\w+)/, /\(/, /NUMBER{0}/, /===/, /\w+/, /\)/, /\,/, /(\w+)\.(\w+).+?/, /\)/, /\}/],
+                "Dsync.clanData=$3;"
+            );
+            sendFunction("accept", accept);
+            Dsync.props.acceptList = acceptList;
 
             args[0] = Hook.code;
             window.eval = target;

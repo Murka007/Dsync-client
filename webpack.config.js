@@ -58,6 +58,7 @@ if (isProd) {
 // @grant none
 // @license MIT
 // @namespace https://greasyfork.org/users/919633
+// @downloadURL https://raw.githubusercontent.com/Murka007/Dsync-client/main/build/Dsync_Client.user.js
 // ==/UserScript==
 /* jshint esversion:6 */
 
