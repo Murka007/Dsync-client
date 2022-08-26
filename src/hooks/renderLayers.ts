@@ -19,6 +19,8 @@ const renderLayers = (ctx: TCTX, now: number) => {
                 drawBar(ctx, object, target.turretReload, 3000, settings.turretReloadBarColor);
             }
 
+            windmillRotation(target);
+
             const color = getMarkerColor(target, object.ownerID);
             if (color === null) continue;
 
@@ -26,8 +28,6 @@ const renderLayers = (ctx: TCTX, now: number) => {
             ctx.translate(object.x + target.dirX, object.y + target.dirY);
             marker(ctx, color);
             ctx.restore();
-
-            windmillRotation(target);
         }
     }
 }

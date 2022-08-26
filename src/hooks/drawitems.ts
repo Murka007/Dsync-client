@@ -12,11 +12,11 @@ const drawItems = (target: TObjectAny, id: number, ctx: TCTX, step: number) => {
         drawBar(ctx, { ...object, x: 0, y: 0 }, target.turretReload, 3000, settings.turretReloadBarColor);
     }
 
-    const color = getMarkerColor(target, object.ownerID) || "red";
+    windmillRotation(target);
+
+    const color = getMarkerColor(target, object.ownerID);
     if (color === null) return;
     marker(ctx, color);
-
-    windmillRotation(target);
 }
 
 export default drawItems;
