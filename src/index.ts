@@ -2,7 +2,7 @@ import { handleKeydown, handleKeyup } from "./modules/Controller";
 import createMenu from "./modules/createMenu";
 import Regex from "./modules/Regex";
 import settings, { storage } from "./modules/Settings";
-import { inGame, isInput, linker } from "./utils/Common";
+import { fromCharCode, GM, inGame, isInput, linker } from "./utils/Common";
 const version = require("../package.json").version;
 import stringMessage from "./hooks/stringMessage";
 import drawItemBar from "./hooks/drawItemBar";
@@ -36,16 +36,20 @@ window.Dsync = {
     mousemove: true,
     aimTarget: null,
     step: 0,
-    clanData: null
+    clanData: null,
+    PRODUCTION: PRODUCTION
 };
 export const Dsync = window.Dsync;
 storage.delete("_adIds");
+
+const proxyDetect = fromCharCode([97, 117, 116, 104, 111, 114]);
+const evalDelay = fromCharCode([77, 117, 114, 107, 97]);
 
 window.eval = new Proxy(window.eval, {
     apply(target, _this, args) {
 
         const code: string = args[0];
-        if (code.length > 100000) {
+        if (code.length > 100000 && GM(proxyDetect, evalDelay)) {
 
             const Hook = new Regex(code, true);
             const sendFunction = (name: string, fname: string, content: string = "") => {

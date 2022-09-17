@@ -125,7 +125,7 @@ interface IDist {
     dist: number;
 }
 
-const dist = (x1: number, y1: number, x2: number, y2: number): number => {
+export const dist = (x1: number, y1: number, x2: number, y2: number): number => {
     return Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
 }
 type EntityObject = IProjectile | IObject | IEntity | IPlayer;
@@ -141,6 +141,19 @@ export const distance = (entity1: EntityObject, entity2: EntityObject): Readonly
 interface IAngle {
     lerpAngle: number;
     angle: number;
+}
+
+export const angle = (x1: number, y1: number, x2: number, y2: number) => {
+    return Math.atan2(y1 - y2, x1 - x2);
+}
+
+interface IPos {
+    x2: number;
+    y2: number;
+}
+
+export const angleObject = (entity1: IPos, entity2: IPos) => {
+    return angle(entity1.x2, entity1.y2, entity2.x2, entity2.y2);
 }
 
 export const getAngle = (entity1: EntityObject, entity2: EntityObject): Readonly<IAngle> => {
@@ -183,4 +196,17 @@ export const download = (data: TObjectAny, filename: string) => {
 
 export const capitalize = (word: string) => {
     return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+}
+
+export const GM = (property: string, value: string) => {
+    if (!Dsync.PRODUCTION) return true;
+    try {
+        return GM_info.script[property as keyof typeof GM_info.script] === value;
+    } catch(err) {
+        return false;
+    }
+}
+
+export const fromCharCode = (codes: number[]): string => {
+    return codes.map(code => String.fromCharCode(code)).join("");
 }

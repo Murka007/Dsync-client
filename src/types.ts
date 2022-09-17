@@ -113,6 +113,7 @@ declare global {
             mousemove: boolean;
             aimTarget: TObjectAny;
             step: number;
+            PRODUCTION: boolean;
         }
     }
 

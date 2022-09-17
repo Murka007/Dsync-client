@@ -1,7 +1,7 @@
 import { Dsync, log } from "..";
 import { EHats, EItems, EWeapons, PlacementType } from "../types";
-import { inGame, isInput, sleep } from "../utils/Common";
-import { canShoot, getNearestPossibleEnemy, hasItemByType, hasSecondary, itemBar, upgradeScythe } from "../utils/Control";
+import { angleObject, inGame, isInput, sleep } from "../utils/Common";
+import { canShoot, futurePosition, getNearestPossibleEnemy, hasItemByType, hasSecondary, itemBar, upgradeScythe } from "../utils/Control";
 import settings from "./Settings";
 
 let move = 0;
@@ -147,7 +147,8 @@ const invisibleHit = () => {
     const enemy = getNearestPossibleEnemy(+!weapon);
     const shoot = canShoot() && !weapon;
     if (enemy && (settings.meleeAim && !shoot || settings.bowAim && shoot)) {
-        angle = enemy.dir;
+        // angle = enemy.dir;
+        angle = angleObject(futurePosition(enemy), futurePosition(Dsync.myPlayer));
         Dsync.mousemove = false;
         Dsync.aimTarget = enemy.target;
     }

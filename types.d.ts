@@ -10,6 +10,9 @@ declare module "*.scss" {
 
 declare const GM_info: {
     script: {
-        name: string
+        name: string;
+        author: string;
     }
 }
+
+declare const PRODUCTION: boolean;

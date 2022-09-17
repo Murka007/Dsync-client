@@ -5,6 +5,7 @@ const HtmlInlineScriptPlugin = require("html-inline-script-webpack-plugin");
 const WatchExternalFilesPlugin = require('webpack-watch-files-plugin').default;
 const { defaultMinimizerOptions } = require("html-loader");
 const { version } = require("./package.json");
+const { DefinePlugin } = require("webpack");
 
 const MODE = process.env.MODE.replace(/\-tamper/, "");
 const isProd = MODE === "production";
@@ -23,8 +24,8 @@ class BannerPlugin {
             for (const chunk of compilation.chunks) {
                 for (const filename of chunk.files) {
                     const asset = compilation.assets[filename];
-                    const code = asset._value.match(/^(\(\(\)\s*=>\s*\{.+)\(\);?$/ms)[1];
-                    asset._value = this.banner.replace(/\{CODE\}/, code);
+                    const code = asset._value.match(/^\(\(\)(\s*=>\s*\{.+)\(\);?$/ms)[1];
+                    asset._value = this.banner.replace(/\{CODE\}/, "((GM_info)" + code);
                 }
             }
             callback();
@@ -42,6 +43,9 @@ const plugins = [
             "./public/**/*",
             "./public/*",
         ]
+    }),
+    new DefinePlugin({
+        PRODUCTION: isProd
     })
 ];
 
@@ -70,7 +74,7 @@ if (isProd) {
     PLEASE, I NEED YOUR SUPPORT ON GITHUB (GIVE ME A STAR ON MY REPOSITORY),
     ALSO SUPPORT THIS SCRIPT ON GREASYFORK (register and write a comment: "this script works, thank you so much"),
     FOR MORE UPDATES JOIN MY DISCORD SERVER!!!
-*/\n\nFunction("(" + {CODE}.toString() + ")();")();`)
+*/\n\nFunction("(" + {CODE}.toString() + \`)(\${JSON.stringify(GM_info)});\`)();`)
     )
 }
 

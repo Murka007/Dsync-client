@@ -1,7 +1,7 @@
 import { Dsync, log } from ".."
 import { teammates } from "../hooks/clanHandler";
 import { EAnimals, EItems, EItemTypes, ELayer, EWeapons, IEntity, IPlayer, LayerExclude, LayerObjects } from "../types";
-import { distance, formatEntity, formatObject, getAngle, sleep } from "./Common";
+import { angle, dist, distance, formatEntity, formatObject, getAngle, sleep } from "./Common";
 
 export const itemBar = (index: number) => {
     return Dsync.defaultData[Dsync.props.itemBar][index];
@@ -88,6 +88,16 @@ export const lineSegmentIntersectsCircle = (
         (-hB <= a || c + hB + hB + a <= 0) &&
         (hB <= 0 || c <= 0)
     )
+}
+
+export const futurePosition = (entity: IEnemy | IEntity) => {
+    const { x1, y1, x2, y2 } = entity;
+    const distance = dist(x2, y2, x1, y1) * (entity === Dsync.myPlayer ? 1 : 2.2);
+    const dir = angle(x2, y2, x1, y1);
+    return {
+        x2: x2 + distance * Math.cos(dir),
+        y2: y2 + distance * Math.sin(dir)
+    }
 }
 
 interface IEnemy extends IEntity {
