@@ -140,7 +140,9 @@ export const drawHealth = (ctx: TCTX, entity: IEntity) => {
 }
 
 const drawImage = (ctx: TCTX, image: HTMLImageElement) => {
-    ctx.drawImage(image, -0.5 * image.width / 2, -0.5 * image.height, image.width * 0.5, image.height * 0.5);
+    if (image && image.naturalHeight !== 0) {
+        ctx.drawImage(image, -0.5 * image.width / 2, -0.5 * image.height, image.width * 0.5, image.height * 0.5);
+    }
 }
 
 export const drawBar = (ctx: TCTX, entity: IEntity | IObject, value: number, maxValue: number, color: string) => {
