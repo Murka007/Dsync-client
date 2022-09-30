@@ -84,7 +84,8 @@ export const formatProjectile = (object: TObjectAny): Readonly<IProjectile> => {
     const data = formatData(object);
     return {
         ...data,
-        range: object.range
+        range: object.range,
+        projectileType: object[Dsync.props.projectileType]
     }
 }
 
@@ -116,7 +117,8 @@ export const formatPlayer = (entity: TObjectAny): IPlayer => {
     return {
         ...player,
         hat: entity[Dsync.props.hat],
-        isClown: player.playerValue === 128
+        isClown: player.playerValue === 128,
+        currentItem: entity[Dsync.props.currentItem]
     }
 }
 
@@ -127,6 +129,9 @@ interface IDist {
 
 export const dist = (x1: number, y1: number, x2: number, y2: number): number => {
     return Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
+}
+export const distObject = (entity1: IPos, entity2: IPos) => {
+    return dist(entity1.x2, entity1.y2, entity2.x2, entity2.y2);
 }
 type EntityObject = IProjectile | IObject | IEntity | IPlayer;
 export const distance = (entity1: EntityObject, entity2: EntityObject): Readonly<IDist> => {
@@ -163,6 +168,14 @@ export const getAngle = (entity1: EntityObject, entity2: EntityObject): Readonly
         lerpAngle: entity1Has && entity2Has ? Math.atan2(entity1.y-entity2.y, entity1.x-entity2.x) : null,
         angle: Math.atan2(entity1.y2-entity2.y2, entity1.x2-entity2.x2),
     }
+}
+
+export const diff = (a: number, b: number) => {
+    return Math.abs(a - b);
+}
+
+export const clamp = (value: number, min: number, max: number) => {
+    return Math.min(Math.max(value, min), max);
 }
 
 export const lerp = (start: number, stop: number, amt: number) => {

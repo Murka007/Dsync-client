@@ -1,7 +1,7 @@
 import { Dsync, log } from "..";
 import settings from "../modules/Settings";
-import { ELayer, TCTX, TObjectAny } from "../types";
-import { formatEntity, getAngle } from "../utils/Common";
+import { ELayer, TargetReload, TCTX, TObjectAny } from "../types";
+import { clamp, formatEntity, formatPlayer, getAngle } from "../utils/Common";
 import { projectileCanHitEntity } from "../utils/Control";
 import Images from "../utils/Images";
 import { crosshair, drawBar, drawHealth, drawTracers, getTracerColor, renderText } from "../utils/Rendering";
@@ -23,17 +23,26 @@ const drawEntityInfo = (
             Dsync.target[Dsync.props.angle] = settings.visualAim ? getAngle(aimTarget, entity).lerpAngle : Dsync.getAngle();
         }
     }
-    drawHealth(ctx, entity);
 
-    if (target.oldId) {
-        if (settings.hatReloadBar && entity.type === 0) {
-            drawBar(ctx, entity, target.hatReload, 1300, settings.hatReloadBarColor);
+    let height = 0;
+    if (entity.type === 0) {
+        if (settings.hatReloadBar && target.oldId) {
+            const fillValue = clamp(target.hatReload, 0, TargetReload.HAT);
+            height += drawBar(ctx, entity, fillValue, TargetReload.HAT, settings.hatReloadBarColor, height);
         }
-    
-        if (settings.fireballReloadBar && entity.type === ELayer.DRAGON) {
-            drawBar(ctx, entity, target.fireballReload, 3000, settings.fireballReloadBarColor);
+
+        if (settings.weaponReloadBar) {
+            const fillValue = clamp(target.weaponReload, 0, target.weaponMaxReload);
+            height += drawBar(ctx, entity, fillValue, target.weaponMaxReload, settings.weaponReloadBarColor, height);
         }
     }
+
+    if (entity.type === ELayer.DRAGON && settings.fireballReloadBar) {
+        const fillValue = clamp(target.fireballReload, 0, TargetReload.DRAGON);
+        height += drawBar(ctx, entity, fillValue, TargetReload.DRAGON, settings.fireballReloadBarColor);
+    }
+
+    drawHealth(ctx, entity, height);
 
     if (settings.drawID && entity.type === 0) {
         const front = Images.gaugeFront;

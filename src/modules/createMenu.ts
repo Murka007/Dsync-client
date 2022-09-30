@@ -90,6 +90,7 @@ const createMenu = () => {
         const menuTransparency = iframeDocument.querySelector("#menuTransparency") as HTMLInputElement;
         const colorPickers = iframeDocument.querySelectorAll("input[type='color'][id]") as NodeListOf<HTMLInputElement>;
         const selects = iframeDocument.querySelectorAll("select[id]") as NodeListOf<HTMLSelectElement>;
+        const botList = iframeDocument.querySelector("#botList") as HTMLDivElement;
 
         const update = () => {
 

@@ -1,9 +1,9 @@
-import { Dsync } from "..";
+import { Dsync, log } from "..";
 import { accept, autochat, equipHat, fastBreakHat, fastBreaking, heal } from "../modules/Controller";
 import settings from "../modules/Settings";
-import { EHats, ELayer, TObjectAny } from "../types";
-import { distance, formatEntity, formatPlayer, formatProjectile, inGame } from "../utils/Common";
-import { isStoneGold, upgradeScythe } from "../utils/Control";
+import { EHats, ELayer, TargetReload, TObjectAny } from "../types";
+import { distance, distObject, formatEntity, formatPlayer, formatProjectile, inGame } from "../utils/Common";
+import { getPlayerByOwner, isSecondary, isWeapon } from "../utils/Control";
 
 let toggleClown = false;
 let toggleScuba = false;
@@ -25,15 +25,17 @@ const updatePlayer = (target: TObjectAny) => {
     const entity = formatEntity(target);
     const player = formatPlayer(target);
     if (entity.type === 0) {
+
+        if (isWeapon(player.currentItem)) {
+            if (isSecondary(player.currentItem)) {
+                target.secondary = player.currentItem;
+            } else {
+                target.primary = player.currentItem;
+            }
+        }
+
         if (player.id === Dsync.myPlayerID()) {
             Dsync.myPlayer = { ...Dsync.myPlayer, ...player };
-
-            if (settings.skipUpgrades) {
-                const upgradeBar = Dsync.defaultData[Dsync.props.upgradeBar];
-                if (upgradeBar.length === 1) {
-                    Dsync.upgradeItem(upgradeBar[0]);
-                }
-            }
 
             const { y2, health, maxHealth, isClown, hat, oldHat } = Dsync.myPlayer;
 
@@ -77,10 +79,6 @@ const updatePlayer = (target: TObjectAny) => {
             }
             if (settings.autochat) autochat();
 
-            if (settings.autoScythe && Dsync.entityList()[ELayer.GOLDENCOW].length && !isStoneGold()) {
-                upgradeScythe();
-            }
-
             if (settings.autoAccept && Dsync.clanData[Dsync.props.acceptList].length) {
                 accept(true);
             }
@@ -89,59 +87,46 @@ const updatePlayer = (target: TObjectAny) => {
         if (settings.hatReloadBar) {
             if (target.oldId !== player.id) {
                 target.oldId = player.id;
-                target.oldHat = player.hat;
-                target.hatReload = 1300;
-            }
-        
-            if (target.oldHat !== player.hat) {
-                target.oldHat = player.hat;
-                target.hatReload = 0;
-            }
-        
-            target.hatReload = Math.min(target.hatReload + Dsync.step, 1300);
-        }
-    } else {
-        if (settings.fireballReloadBar && entity.type === ELayer.DRAGON) {
-            const fireballs = Dsync.entityList()[ELayer.FIREBALL].map(object => {
-                const fireball = formatEntity(object);
-                return distance(entity, fireball).dist;
-            });
-            const total = fireballs.reduce((total, int) => total + int, 0);
-            const reload = 2900;
-
-            if (target.oldId !== entity.id) {
-                target.oldId = entity.id;
-                target.total = total;
-                target.fireballReload = reload;
+                target.prevHat = player.hat;
+                target.hatReload = TargetReload.HAT;
             }
 
-            if ((fireballs.length === 5 && total < 600 || fireballs.length === 1 && total < 100) && target.fireballReload === reload) {
-                target.total = total;
-                target.fireballReload = 0;
+            if (target.prevHat !== player.hat) {
+                target.prevHat = player.hat;
+                target.hatReload = -Dsync.step;
             }
-
-            target.fireballReload = Math.min(target.fireballReload + Dsync.step, reload);
+            target.hatReload = Math.min(target.hatReload + Dsync.step, TargetReload.HAT);
         }
 
-        if (settings.turretReloadBar && entity.type === ELayer.TURRET) {
-            const projectile = Dsync.entityList()[ELayer.PROJECTILE].find(object => {
-                const bullet = formatProjectile(object);
-                return bullet.ownerID === entity.ownerID && entity.angle2 === bullet.angle2;
-            });
-
-            if (target.turretReload === undefined) {
-                target.turretReload = 3000;
+        if (settings.weaponReloadBar) {
+            if (target.weaponMaxReload === undefined && isWeapon(player.currentItem)) {
+                target.weaponMaxReload = Dsync.itemData[player.currentItem].reload;
             }
 
-            if (projectile) {
-                const bullet = formatProjectile(projectile);
-                if (bullet && target.bulletID !== bullet.id) {
-                    target.bulletID = bullet.id;
-                    target.turretReload = 0;
+            if (target.weaponMaxReload !== undefined) {
+                if (target.weaponReload === undefined) {
+                    target.weaponReload = target.weaponMaxReload;
                 }
+
+                target.weaponReload = Math.min(target.weaponReload + Dsync.step, target.weaponMaxReload);
             }
-            target.turretReload = Math.min(target.turretReload + Dsync.step, 3000);
         }
+    }
+
+    if (entity.type === ELayer.TURRET && settings.turretReloadBar) {
+        if (target.turretReload === undefined) {
+            target.turretReload = TargetReload.TURRET;
+        }
+
+        target.turretReload = Math.min(target.turretReload + Dsync.step, TargetReload.TURRET);
+    }
+
+    if (entity.type === ELayer.DRAGON && settings.fireballReloadBar) {
+        if (target.fireballReload === undefined) {
+            target.fireballReload = TargetReload.DRAGON;
+        }
+
+        target.fireballReload = Math.min(target.fireballReload + Dsync.step, TargetReload.DRAGON);
     }
 }
 

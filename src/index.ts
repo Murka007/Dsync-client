@@ -14,8 +14,11 @@ import updatePlayer from "./hooks/updatePlayer";
 import renderLayers from "./hooks/renderLayers";
 import { EItemTypes } from "./types";
 import moveUpdate from "./hooks/moveUpdate";
+import attackAnimation from "./hooks/attackAnimation";
+import createEntity from "./hooks/createEntity";
 
 export const log = console.log;
+export const error = console.error;
 window.log = log;
 window.Dsync = {
     props: {},
@@ -53,6 +56,7 @@ window.eval = new Proxy(window.eval, {
 
             const Hook = new Regex(code, true);
             const sendFunction = (name: string, fname: string, content: string = "") => {
+                if (fname === undefined) return;
                 Hook.prepend(name, [`function`, fname], `Dsync.${name}=${fname};` + content);
             }
 
@@ -66,19 +70,32 @@ window.eval = new Proxy(window.eval, {
                 `EXTERNAL.__proto__.toString=()=>COPY_CODE;`
             );
 
-            // Prevent from executing debugger
-            Hook.replace("Debugger fix", /debugger/, ``, "g");
+            Hook.replace(
+                "antiError",
+                [/Array.prototype.pop/, /=/, /Array.prototype.shift,/],
+                ""
+            );
 
-            const selectItem = Hook.match("selectItem", [/!/, /\w+/, /\[/, /\w+/, /\]/, /&&/, /(\w+)/, /\(/, /\d/, /\)/, /,/])[1];
+            // Prevent from executing debugger
+            // Hook.replace("Debugger fix", /debugger/, ``, "g");
+
+            const selectItem = Hook.match("selectItem", [/\|\|/, /(\w+)/, /\(/, /NUMBER{2}/, /\)/, /,/])[1];
             sendFunction("selectItem", selectItem);
 
-            const equipHat = Hook.match("equipHat", [/!/, /\w+/, /\)/, /return/, /;/, /(\w+)/, /\(/, /\w+/, /\)/])[1];
-            sendFunction("equipHat", equipHat);
+            // const equipHat = Hook.match("equipHat", [/!/, /\w+/, /\)/, /return/, /;/, /(\w+)/, /\(/, /\w+/, /\)/])[1];
+            // sendFunction("equipHat", equipHat);
+            Hook.append(
+                "equipHat",
+                // [/&&/, /\w+/, /&&/, /\(/, /(\w+)/, /=/, /\w+/, /,.+?])/],
+                [/&&/, /\w+/, /&&/, /\(/, /(\w+)/, /=/, /\w+/, /,(.+?\]\)\)).+?\}\)\}/],
+                "Dsync.equipHat=($2)=>{$3};"
+            );
 
-            const chat = Hook.match("chat", [/break/, /\}/, /(\w+)/, /\(/, /\w+/, /\)/])[1];
+            // const chat = Hook.match("chat", [/break/, /\}/, /(\w+)/, /\(/, /\w+/, /\)/])[1];
+            const chat = Hook.match("chat", [/\)/, /\)/, /\}/, /(\w+)/, /\(/, /\w+/, /\)/, /\}/, /\}/, /\)/])[1];
             sendFunction("chat", chat);
 
-            const [, attack, getAngle] = Hook.match("attack", [/&&/, /(\w+)/, /\(/, /(\w+)/, /\(/, /\)/, /\)/, /,/]);
+            const [, attack, getAngle] = Hook.match("attack", [/\|\|/, /(\w+)/, /\(/, /(\w+)/, /\(/, /\)/, /\)/, /,/]);
             sendFunction("attack", attack);
             sendFunction("getAngle", getAngle);
             
@@ -88,19 +105,20 @@ window.eval = new Proxy(window.eval, {
             const autoattack = Hook.match("autoattack", [/,/, /(\w+)/, /\(/, /\w+/, /\)/, /\)/, /\)/])[1];
             sendFunction("autoattack", autoattack);
 
-            const move = Hook.match("move", [/&&/, /\(/, /(\w+)/, /\(/, /\w+/, /\)/])[1];
+            const move = Hook.match("move", [/&&/, /\(/, /(\w+)\(\w+\)/, /,/])[1];
             sendFunction("move", move);
 
-            const createClan = Hook.match("createClan", [/,/, /\w+/, /=>/, /\{/, /(\w+)/, /\(/, /\w+/])[1];
-            sendFunction("createClan", createClan);
+            // const createClan = Hook.match("createClan", [/,/, /\w+/, /=>/, /\{/, /(\w+)/, /\(/, /\w+/])[1];
+            // sendFunction("createClan", createClan);
 
             const leaveClan = Hook.match("leaveClan", [/=>/, /\{/, /(\w+)/, /\(/, /\)/, /\}/])[1];
             sendFunction("leaveClan", leaveClan);
 
-            const kickUser = Hook.match("kickUser", [/return/, /;/, /(\w+)/, /\(/, /\w+/, /\)/, /\}/, /:/])[1];
+            const [, kickUser, joinClan] = Hook.match(
+                "kickUser",
+                [/n\s*\w+/, /\(/, /ARGS{4}/, /\).+?:/, /\w+/, /\?/, /\w+/, /=>/, /\{.+?(\w+)\(\w+\).+?(\w+)\(\w+\)/]
+            );
             sendFunction("kickUser", kickUser);
-
-            const joinClan = Hook.match("joinClan", [/(\w+)/, /\(/, /\w+/, /\)/, /\}/, /\}/, /\)/, /\}/, /\}/])[1];
             sendFunction("joinClan", joinClan);
 
             const changeAngle = Hook.match("changeAngle", [/\w+/, /\(/, /\w+/, /\)/, /\}/, /function/, /\w+/, /\(/, /\w+/, /\)/, /\{/, /(\w+)/, /\(/, /\w+/, /\)/, /,/])[1];
@@ -110,26 +128,34 @@ window.eval = new Proxy(window.eval, {
             sendFunction("MoveByAngle", MoveByAngle);
 
             // Get mousedown function without it's protection
-            Hook.append(
+            // Hook.append(
+            //     "mousedown",
+            //     [/&&/, /\w+/, /\>/, /\w+/, /\)/, /return/, /;/, `(.+?=`, /(\w+)/,
+            //     `.+?),`, `!(\\w+`, /\(/, /\w+/, /,/, /\w+/, `\\)).+?`, /\}/],
+            //     `Dsync.mousedown=($3)=>{$2;return $4;};`
+            // );
+            const event = Hook.append(
                 "mousedown",
-                [/&&/, /\w+/, /\>/, /\w+/, /\)/, /return/, /;/, `(.+?=`, /(\w+)/,
-                `.+?),`, `!(\\w+`, /\(/, /\w+/, /,/, /\w+/, `\\)).+?`, /\}/],
-                `Dsync.mousedown=($3)=>{$2;return $4;};`
-            );
+                [/\w+/, /&&/, /\w+/, /\>/, /\w+/, /\|\|/, `\\(?(.+?=\\s*(\\w+).+?)\\|\\|.+?\}`],
+                `Dsync.mousedown=($3)=>($2);`
+            )[3];
 
             // Get mouseup function without it's protection
-            Hook.append(
+            const mouseup = Hook.prepend(
                 "mouseup",
-                [/!\w+\.\w+/, /\)/, /return/, /;/, `(\\w+`, /=/, /(\w+).+?\w+/, /\(/, /\w+/, /,/, /\w+/, `\\))`, /\}/],
-                `Dsync.mouseup=($3)=>{$2};`
+                [/function/, /(\w+)/, /\(/, /\w+/, /\)/, /\{/, /\w+\.isTrusted/, /&&/, /\(/, /\w+/, /=/, /\w+.+?\}/],
+                `Dsync.mouseup=$2;`
             );
 
             // Create toggleRotation function
-            const [, toggleRotation, rotVar] = Hook.match("lockRotation", [/\[/, /\w+/, /\]/, /&&/, /(\w+)/, /\(/, /!(\w+)/, /\)/, /,/]);
+            const [, toggleRotation, rotVar] = Hook.match(
+                "lockRotation",
+                [/\[/, /\w+/, /\]/, /\|\|/, /(\w+)/, /\(/, /!(\w+)/, /\)/, /,/]
+            );
             Hook.prepend("lockRotation", [`function`, `${toggleRotation}`], `Dsync.toggleRotation=()=>{${rotVar}=!${rotVar};};`);
 
             // Copy toggle chat function
-            const toggleChat = Hook.match("toggleChat", [/return/, `(\\w+`, /&&/, /\w+/, /\(/, /!\[/, /\]/, /\)/, `,.+?),\\w+\\.`])[1];
+            const toggleChat = Hook.match("toggleChat", [/return/, `(\\w+`, /&&/, /\w+/, /\(/, /!\d+/, /\)/, `,.+?),void`])[1];
             Hook.insert(
                 "toggleChat",
                 [/null/, /\}/, /\)/, /\)/, /;/, /{INSERT}/, /{VAR}/, /\w+/, /=/],
@@ -141,24 +167,32 @@ window.eval = new Proxy(window.eval, {
             Dsync.props.itemBar = itemBar;
 
             // Hook draw entity function
-            Hook.append(
+            const drawEntityInfo = Hook.append(
                 "drawEntityInfo",
-                [/function/, /\w+/, /\(/, /ARGS{3}/, /\)/, /\{/, /{VAR}/, /\w+/, /=/, /\w+/, /\[/, /\w+/, /\(/, /\).+?\.5;/],
+                [/clan_decline.+?\)/, /\}/, /function/, /(\w+)/, /\(/, /ARGS{3}/, /\)/, /\{/, /{VAR}/, /\w+/, /=/, /\w+.+?\.5;/],
                 "if(Dsync.hooks.drawEntityInfo){Dsync.hooks.drawEntityInfo(...arguments);}"
-            );
+            )[2];
 
-            // Save entity position properties
-            const [, x, x1, x2] = Hook.match("positionX", [/\(\w+\.(\w+)/, /=/, /\w+\.(\w+)/, /\+/, /\(\w+\.(\w+)/]);
+            const [,
+                x, x1, x2,
+                y, y1, y2,
+                angle, angle1, angle2
+            ] = Hook.match(
+                "PositionFormat",
+                [
+                    /\w+\.(\w+)/, /=/, /\w+\.(\w+)/, /=/, /\w+\.(\w+)/, /=/, /\w+,/,
+                    /\w+\.(\w+)/, /=/, /\w+\.(\w+)/, /=/, /\w+\.(\w+)/, /=/, /\w+,/,
+                    /\w+\.(\w+)/, /=/, /\w+\.(\w+)/, /=/, /\w+\.(\w+)/, /=/, /\w+,/
+                ]
+            );
             Dsync.props.x = x;
             Dsync.props.x1 = x1;
             Dsync.props.x2 = x2;
 
-            const [, y, y1, y2] = Hook.match("positionY", [/,\w+\.(\w+)/, /=/, /\w+\.(\w+)/, /\+/, /\(\w+\.(\w+)/]);
             Dsync.props.y = y;
             Dsync.props.y1 = y1;
             Dsync.props.y2 = y2;
 
-            const [, angle, angle1, angle2] = Hook.match("angle", [/\w+\.(\w+)/, /=/, /\w+\.(\w+)/, /=/, /\w+\.(\w+)/, /=/, /\w+/, /,/, /\w+\.\w+/, /=/, /\w+/, /,/]);
             Dsync.props.angle = angle;
             Dsync.props.angle1 = angle1;
             Dsync.props.angle2 = angle2;
@@ -168,7 +202,7 @@ window.eval = new Proxy(window.eval, {
             Dsync.props.id = id;
 
             // Get entity health property
-            const health = Hook.match("health", [/(\w+)/, /\//, /NUMBER{255}/, /\*/])[1];
+            const health = Hook.match("health", [/\w+\.(\w+)/, /\//, /NUMBER{255}/, /\*/])[1];
             Dsync.props.health = health;
 
             // Get entity maxHealth property
@@ -201,24 +235,29 @@ window.eval = new Proxy(window.eval, {
 
             // entityData - name of function, that returns entity data (radius, maxHealth)
             const [, entityData, entityRadius] = Hook.match("entityData", /(\w+)\(\)\[\w+\.\w+\]\.(\w+)/);
-            Hook.prepend(
+            Hook.insert(
                 "entityData",
-                [/function/, /\w+/, /\(/, /ARGS{2}/, /\)/, /\{/, /{VAR}/, /\w+/, /,/],
+                [/clan_decline{QUOTE}/, /\)/, /\).+?;{INSERT}function/, /\w+/, /\(/, /ARGS{2}/, /\)/, /\{/, /{VAR}/],
                 `Dsync.entityData=${entityData}();Dsync.itemData=${itemData}();Dsync.entityList=()=>${entityList};`
             );
             Dsync.props.radius = entityRadius;
 
             // Add condition to render nicknames and health in anyway
-            Hook.insert(
-                "showHoods1",
-                [/\w+/, /\(/, /\)/, /\./, /\w+/, /{INSERT}/, /\)/, /continue/, /;/],
-                `&&!Dsync.settings.showHoods`
-            );
-            Hook.insert(
-                "showHoods2",
-                [/\w+\.\w+/, /===/, /\w+/, /{INSERT}/, /\)/, /\{/],
+            // Hook.insert(
+            //     "showHoods1",
+            //     [/\w+/, /\(/, /\)/, /\./, /\w+/, /{INSERT}/, /\)/, /continue/, /;/],
+            //     `&&!Dsync.settings.showHoods`
+            // );
+            // Hook.insert(
+            //     "showHoods2",
+            //     [/\w+\.\w+/, /===/, /\w+/, /{INSERT}/, /\)/, /\{/],
+            //     `||Dsync.settings.showHoods`
+            // );
+            Hook.append(
+                "showHoods",
+                [/\w+\.\w+/, /!==/, /\w+/, /\)/],
                 `||Dsync.settings.showHoods`
-            );
+            )
 
             // Hook websocket that parses incoming strings
             Hook.insert(
@@ -253,20 +292,27 @@ window.eval = new Proxy(window.eval, {
             Dsync.props.currentCount = currentCount;
 
             // Get upgradeBar property and upgradeItem function
-            const [, upgradeItem, upgradeBar] = Hook.match("upgradeList", [/&&/, /\(/, /(\w+)/, /\(/, /\w+/, /\./, /(\w+)/, /\[/, /\w+/, /\]/, /\),/]);
+            // const [, upgradeItem, upgradeBar] = Hook.match("upgradeList", [/&&/, /\(/, /(\w+)/, /\(/, /\w+/, /\./, /(\w+)/, /\[/, /\w+/, /\]/, /\),/]);
+            // Dsync.props.upgradeBar = upgradeBar;
+            // sendFunction("upgradeItem", upgradeItem);
+            const upgradeBar = Hook.append(
+                "upgradeList",
+                [/Dsync.mouseup.+?\}.+?&&/, /\(/, /(\w+)/, /=/, /\w+\.(\w+).+?,(.+?),/, /\w+/, /=.+?\}/],
+                `Dsync.upgradeItem=($2)=>{$4};`
+            )[3];
             Dsync.props.upgradeBar = upgradeBar;
-            sendFunction("upgradeItem", upgradeItem);
 
-            Hook.replace(
-                "ping",
-                [`({VAR}`, /(\w+)/, /=/, /\w+/, /\[/, /NUMBER{1}/, /\]/, /\|/, /\w+/, /\[/, /NUMBER{2}/, /\]/, /<</, /NUMBER{8}/, `;)`, /(?!{VAR})(\w+)/],
-                `$1Dsync.ping=$2;$3`
-            );
+            // Hook.replace(
+            //     "ping",
+            //     [`({VAR}`, /(\w+)/, /=/, /\w+/, /\[/, /NUMBER{1}/, /\]/, /\|/, /\w+/, /\[/, /NUMBER{2}/, /\]/, /<</, /NUMBER{8}/, `;)`, /(?!{VAR})(\w+)/],
+            //     `$1Dsync.ping=$2;$3`
+            // );
 
-            const clan = Hook.match("clan", [/===/, /\w+/, /\./, /(\w+)/, /\)/, /\)/])[1];
+            // const clan = Hook.match("clan", [/===/, /\w+/, /\./, /(\w+)/, /\)/, /\)/])[1];
+            const clan = Hook.match("clan", [/===/, /\w+\.(\w+)/, /\|\|/, /\w+/])[1];
             Dsync.props.clan = clan;
 
-            const itemOwner = Hook.match("itemOwner", [/\!/, /\(/, /\w+/, /\./, /(\w+)/, /===/])[1];
+            const itemOwner = Hook.match("itemOwner", [/&&/, /(?!\d+)\w+/, /===/, /\w+\.(\w+)/, /\)/])[1];
             Dsync.props.itemOwner = itemOwner;
 
             const byteLength = Hook.match("byteLength", [/NUMBER{3}/, /;/, /\w+/, /</, /(\w+)/])[1];
@@ -318,20 +364,25 @@ window.eval = new Proxy(window.eval, {
 
             Hook.append(
                 "createEntity",
-                [/(\w+)/, /\./, /\w+/, /=/, /NUMBER{0}/, /;/, /break/, /;/, /default/, /:/, /break/, /\}/],
-                `if (Dsync.myPlayerID() === $2[Dsync.props.id]){Dsync.target=$2;}`
+                // [/(\w+)/, /\./, /\w+/, /=/, /NUMBER{0}/, /;/, /break/, /;/, /default/, /:/, /break/, /\}/],
+                [/(\w+)\[\w+\(\w+\)\]/, /=/, /NUMBER{0}/, /\}/],
+                // `if (Dsync.myPlayerID() === $2[Dsync.props.id]){Dsync.target=$2;}`
+                `Dsync.hooks.createEntity($2);`
             );
 
-            Hook.replace(
+            Hook.prepend(
                 "renderLayers",
-                [`(function`, /\w+/, /\(/, /ARGS{2}/, /\)/, /\{/, /{VAR}/, /\w+/, /,/, /\w+/, /=.+?,/, /ARGS{2}/, `\\))`, /\}/],
-                `$1;if(Dsync.itemList&&Dsync.hooks.renderLayers&&!Dsync.settings.markersBottom){Dsync.hooks.renderLayers(...arguments);}}`
+                [/\}/, /function/, `${drawEntityInfo}\\(ARGS{3}\\)`],
+                `;if(Dsync.itemList&&Dsync.hooks.renderLayers&&!Dsync.settings.markersBottom){Dsync.hooks.renderLayers(...arguments);}`
+                // [`(function`, /\w+/, /\(/, /ARGS{2}/, /\)/, /\{/, /{VAR}/, /\w+/, /,/, /\w+/, /=.+?,/, /ARGS{2}/, `\\))`, /\}/],
+                // `$1;if(Dsync.itemList&&Dsync.hooks.renderLayers&&!Dsync.settings.markersBottom){Dsync.hooks.renderLayers(...arguments);}}`
             );
 
             Hook.replace(
                 "mousemove",
-                [`(const`, /\w+/, /=/, /\w+/, /\(/, /\)/, /;.+?&&/, /\w+/, /\(/, /\w+/, `\\))`],
-                "if(Dsync.mousemove){$1}"
+                // [`(const`, /\w+/, /=/, /\w+/, /\(/, /\)/, /;.+?&&/, /\w+/, /\(/, /\w+/, `\\))`],
+                [`({VAR}`, `\\w+`, `=`, `${getAngle}\\(\\);.+?)\\}`],
+                "if(Dsync.mousemove){$1}}"
             );
 
             const renderLayer = Hook.match("renderLayer", [/:/, /NUMBER{38}/, /,/, /(\w+)/, /:/, /\w+/, /\./, /\w+/, /,/])[1];
@@ -370,13 +421,32 @@ window.eval = new Proxy(window.eval, {
                 "if(Dsync.settings.hideMessages)return;"
             );
 
-            const [,, accept, clanData, acceptList] = Hook.append(
+            // const [,, accept, clanData, acceptList] = Hook.append(
+            const acceptList = Hook.append(
                 "autoAccept",
-                [/\(/, /(\w+)/, /\(/, /NUMBER{0}/, /===/, /\w+/, /\)/, /\,/, /(\w+)\.(\w+).+?/, /\)/, /\}/],
-                "Dsync.clanData=$3;"
-            );
-            sendFunction("accept", accept);
+                // [/\(/, /(\w+)/, /\(/, /NUMBER{0}/, /===/, /\w+/, /\)/, /\,/, /(\w+)\.(\w+).+?/, /\)/, /\}/],
+                [/\((\w+)/, /=/, /\w+/, /===/, /\w+,(.+?),(\w+)\.(\w+).+?\)\}/],
+                "Dsync.accept=($2)=>{$3};Dsync.clanData=$4;"
+            )[5];
             Dsync.props.acceptList = acceptList;
+
+            Hook.append(
+                "hitAnimation",
+                [/\+=NUMBER{5}.+?(\w+)=.+?(\w+)=.+?(\w+)=.+?(\w+)=.+?(\w+)=.+?;/],
+                "Dsync.hooks.attackAnimation($2, $3, $4, $5, $6);"
+            );
+
+            Hook.prepend(
+                "getUser",
+                [/function/, /\w+/, /\(/, /ARGS{16}.+?(\w+)\.\w+/, /\(/, /\w+/, /\)/],
+                `Dsync.players=()=>$2;`
+            );
+
+            const bulletType = Hook.match("bulletType", [/reload:/, /NUMBER{235},/, /(\w+):/, /\w+\.\w+,/])[1];
+            Dsync.props.bulletType = bulletType;
+
+            const projectileType = Hook.match("projectileType", [/,\w+\[\w+\]\.(\w+),/])[1];
+            Dsync.props.projectileType = projectileType;
 
             args[0] = Hook.code;
             window.eval = target;
@@ -436,6 +506,8 @@ const load = () => {
     Dsync.hooks.DeleteClan = DeleteClan;
     Dsync.hooks.renderLayers = renderLayers;
     Dsync.hooks.moveUpdate = moveUpdate;
+    Dsync.hooks.createEntity = createEntity;
+    Dsync.hooks.attackAnimation = attackAnimation;
     Dsync.itemList = Dsync.itemData
                         .filter(item => item[Dsync.props.itemDataType] === EItemTypes.PLACEABLE)
                         .map(item => item[Dsync.props.renderLayer]);

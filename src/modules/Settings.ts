@@ -105,10 +105,13 @@ export const defaultSettings: Readonly<ISettings> = {
     hatReloadBarColor: "#5155cc",
 
     fireballReloadBar: true,
-    fireballReloadBarColor: "#cf7748",
+    fireballReloadBarColor: "#cf7148",
 
     turretReloadBar: true,
     turretReloadBarColor: "#51cc80",
+
+    weaponReloadBar: true,
+    weaponReloadBarColor: "#cc8251",
 
     windmillRotation: false,
     possibleShots: true,
@@ -129,7 +132,6 @@ export const defaultSettings: Readonly<ISettings> = {
     skipUpgrades: true,
     invisHitToggle: false,
     reverseZoom: false,
-    autoScythe: true,
     autoAccept: false,
     
     menuTransparency: false,

@@ -40,6 +40,8 @@ interface IProps {
     rotSpeed?: string;
     weaponType?: string;
     acceptList?: string;
+    bulletType?: string;
+    projectileType?: string;
 }
 
 export type TObjectAny = { [key: string]: any };
@@ -55,6 +57,8 @@ interface IHooks {
     updatePlayer?(target: TObjectAny): void;
     renderLayers?(ctx: TCTX, now: number): void;
     moveUpdate?(): void;
+    createEntity?(target: TObjectAny): void;
+    attackAnimation?(type: number, id: number, weapon: number, isObject: number, entity: TObjectAny): void;
 }
 
 declare global {
@@ -102,6 +106,7 @@ declare global {
             itemBar?(): number[];
             myPlayerID?(): number;
             ping?: number;
+            players?(): Map<number, TObjectAny>;
 
             entityData?: TObjectAny[];
             itemData?: TObjectAny[];
@@ -216,6 +221,9 @@ export interface ISettings {
     turretReloadBar: boolean;
     turretReloadBarColor: string;
 
+    weaponReloadBar: boolean;
+    weaponReloadBarColor: string;
+
     windmillRotation: boolean;
     possibleShots: boolean;
     hideMessages: boolean;
@@ -230,7 +238,6 @@ export interface ISettings {
     skipUpgrades: boolean;
     invisHitToggle: boolean;
     reverseZoom: boolean;
-    autoScythe: boolean;
     autoAccept: boolean;
 
     menuTransparency: boolean;
@@ -256,6 +263,7 @@ export interface IData {
 
 export interface IProjectile extends IData {
     range: number;
+    projectileType: number;
 }
 
 export interface IObject extends IData {
@@ -273,14 +281,18 @@ export interface IPlayer extends IEntity {
     hat: number;
     oldHat?: number;
     isClown: boolean;
+    currentItem: number;
 }
 
 export enum WebsocketString {
+    LEADERBOARD = 3,
     CONNECT = 12,
-    DEFAULTDATA = 33,
+    UPGRADE = 14,
     DIED = 19,
     KILLUPDATE = 22,
     KILLED = 28,
+    PLAYERSPAWNED = 32,
+    DEFAULTDATA = 33,
     SPAWN = 35
 }
 
@@ -398,9 +410,13 @@ export enum EHats {
 }
 
 export enum EWeapons {
+    MUSKET = 4,
     SHIELD = 11,
     STICK = 13,
     HAMMER = 15,
+    BOW = 26,
+    XBOW = 27,
+    PEARL = 50,
     SCYTHE = 57
 }
 
@@ -429,4 +445,10 @@ export enum PlacementType {
 
 export const selectData = {
     placementType: PlacementType
+}
+
+export enum TargetReload {
+    TURRET = 3000,
+    HAT = 1300,
+    DRAGON = 3000,
 }

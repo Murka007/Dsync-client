@@ -1,4 +1,4 @@
-import { log } from "..";
+import { error, log } from "..";
 import { TYPEOF } from "../utils/Common";
 
 type THook = {
@@ -88,20 +88,20 @@ class Regex {
 
         const expression = new RegExp(regex.replace(/\{INSERT\}/, ""), flags);
         const match = this.code.match(expression);
-        if (match === null) throw new Error("Failed to find: " + name);
+        if (match === null) error("Failed to find: " + name);
         return regex.includes("{INSERT}") ? new RegExp(regex, flags) : expression;
     }
 
     private template(type: number, name: string, regex: TRegex, substr: string) {
         const expression = new RegExp(`(${ this.format(name, regex).source })`);
-        const match = this.code.match(expression);
+        const match = this.code.match(expression) || [];
         this.code = this.code.replace(expression, type === Template.APPEND ? ("$1" + substr) : (substr + "$1"));
         return match;
     }
 
     match(name: string, regex: TRegex, flags?: string, debug: boolean = false) {
         const expression = this.format(name, regex, flags);
-        const match = this.code.match(expression);
+        const match = this.code.match(expression) || [];
         this.hooks[name] = {
             expression,
             match

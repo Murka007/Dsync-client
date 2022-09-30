@@ -118,23 +118,15 @@ export const renderText = (
     ctx.restore();
 }
 
-export const drawHealth = (ctx: TCTX, entity: IEntity) => {
+export const drawHealth = (ctx: TCTX, entity: IEntity, height = 0) => {
     if (!settings.drawHP) return;
 
     const { x, y, health, maxHealth, radius } = entity;
-    const front = Images.gaugeFront;
-    let h = 0;
-    if (
-        settings.hatReloadBar && entity.type === 0 ||
-        settings.fireballReloadBar && entity.type === ELayer.DRAGON
-    ) {
-        h = front.height * 0.5;
-    }
 
-    renderText(ctx, `HP ${health}/${maxHealth}`, (width, height) => {
+    renderText(ctx, `HP ${health}/${maxHealth}`, (width) => {
         return [
             x - width / 2,
-            y + radius + h + 55
+            y + radius + 55 + height
         ]
     })
 }
@@ -145,14 +137,21 @@ const drawImage = (ctx: TCTX, image: HTMLImageElement) => {
     }
 }
 
-export const drawBar = (ctx: TCTX, entity: IEntity | IObject, value: number, maxValue: number, color: string) => {
+export const drawBar = (
+    ctx: TCTX,
+    entity: IEntity | IObject,
+    value: number,
+    maxValue: number,
+    color: string,
+    extraHeight = 0
+): number => {
     const { x, y, radius } = entity;
     const background = Images.gaugeBackground;
     const front = Images.gaugeFront;
     const scale = 0.5;
     const width = front.width * scale;
     const fill = value / maxValue * (width - 10);
-    const h = entity.type === ELayer.TURRET ? 25 : 50;
+    const h = (entity.type === ELayer.TURRET ? 25 : 50) + extraHeight;
 
     ctx.save();
     if (settings.markersBottom && entity.type === ELayer.TURRET) {
@@ -165,6 +164,7 @@ export const drawBar = (ctx: TCTX, entity: IEntity | IObject, value: number, max
     ctx.fillRect(-width / 2 + 5, -scale * front.height + 5, fill, scale * front.height - 10);
     drawImage(ctx, front);
     ctx.restore();
+    return front.height * scale;
 }
 
 export const drawTracers = (ctx: TCTX, entity: IEntity, isTeammate: boolean) => {

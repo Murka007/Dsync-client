@@ -84,6 +84,7 @@ export const place = (id: number, angle: number = null) => {
     attack(angle);
     Dsync.stopAttack();
     if (settings.placementType !== PlacementType.HOLDING) whichWeapon();
+    if (attacking || autoattack) attack(angle);
 }
 
 let count = 0;
@@ -237,7 +238,11 @@ const handleKeydown = (event: KeyboardEvent | MouseEvent, code: string | number)
 
     if (code === settings.heal) {
         isHealing = true;
-        healing();
+        if (settings.placementType === PlacementType.DEFAULT) {
+            Dsync.selectItem(EItems.HEAL);
+        } else {
+            healing();
+        }
     }
 
     if (code === settings.wall) placementHandler(EItems.WALL, code);
@@ -282,7 +287,7 @@ const handleKeydown = (event: KeyboardEvent | MouseEvent, code: string | number)
     if (copyMove !== move) Dsync.move(move);
 
     // Handle mouse attack, item selection
-    if (event instanceof MouseEvent && code === 0/* settings.attack */) {
+    if (event instanceof MouseEvent && code === 0) {
         const canAttack = !Dsync.mousedown(event);
         if (canAttack && Dsync.mousemove) {
             attacking = true;

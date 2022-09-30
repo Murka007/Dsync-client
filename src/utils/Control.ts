@@ -1,7 +1,7 @@
 import { Dsync, log } from ".."
 import { teammates } from "../hooks/clanHandler";
 import { EAnimals, EItems, EItemTypes, ELayer, EWeapons, IEntity, IPlayer, LayerExclude, LayerObjects } from "../types";
-import { angle, dist, distance, formatEntity, formatObject, getAngle, sleep } from "./Common";
+import { angle, dist, distance, formatEntity, formatObject, formatPlayer, getAngle, sleep } from "./Common";
 
 export const itemBar = (index: number) => {
     return Dsync.defaultData[Dsync.props.itemBar][index];
@@ -19,6 +19,16 @@ export const canShoot = () => {
 export const hasItemByType = (type: number) => {
     const items: number[] = Dsync.defaultData[Dsync.props.itemBar];
     return items.some(id => Dsync.itemData[id][Dsync.props.itemType] === type);
+}
+
+export const isWeapon = (id: number) => {
+    const type = Dsync.itemData[id][Dsync.props.itemType];
+    return type === 0 || type === 1;
+}
+
+export const isSecondary = (id: number) => {
+    const type = Dsync.itemData[id][Dsync.props.itemType];
+    return type === 1;
 }
 
 export const isStoneGold = () => {
@@ -58,6 +68,15 @@ export const getEnemies = (): IEntity[] => {
             const isTeammate = teammates.includes(ownerID);
             return !isMyPlayer && !isTeammate; 
         })
+}
+
+export const getPlayerByOwner = (ownerID: number) => {
+    const players = Dsync.players();
+    for (const TObjectAny of players) {
+        const player = formatPlayer(TObjectAny);
+        if (player.ownerID === ownerID) return player;
+    }
+    return null;
 }
 
 export const getEntities = (): IEntity[] => {
