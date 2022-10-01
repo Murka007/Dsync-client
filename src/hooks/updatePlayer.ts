@@ -1,13 +1,14 @@
-import { Dsync, log } from "..";
-import { accept, autochat, equipHat, fastBreakHat, fastBreaking, heal } from "../modules/Controller";
+import { Dsync, pingCount } from "..";
+import { accept, autochat, equipHat, fastBreakHat, fastBreaking, getAngleFromBitmask, heal, isDoingNothing, move, place } from "../modules/Controller";
 import settings from "../modules/Settings";
-import { EHats, ELayer, TargetReload, TObjectAny } from "../types";
-import { distance, distObject, formatEntity, formatPlayer, formatProjectile, inGame } from "../utils/Common";
-import { getPlayerByOwner, isSecondary, isWeapon } from "../utils/Control";
+import { EHats, EItems, ELayer, EObjects, TargetReload, TObjectAny } from "../types";
+import { formatEntity, formatPlayer, inGame, isBlind, isInput, random } from "../utils/Common";
+import { getCount, hasResources, isSecondary, isWeapon } from "../utils/Control";
 
 let toggleClown = false;
 let toggleScuba = false;
 let isHealing = false;
+let start = Date.now();
 
 const getDelay = (health: number) => {
     if (health < 74) return 60;
@@ -37,7 +38,7 @@ const updatePlayer = (target: TObjectAny) => {
         if (player.id === Dsync.myPlayerID()) {
             Dsync.myPlayer = { ...Dsync.myPlayer, ...player };
 
-            const { y2, health, maxHealth, isClown, hat, oldHat } = Dsync.myPlayer;
+            const { x2, y2, health, maxHealth, isClown, hat, oldHat } = Dsync.myPlayer;
 
             if (settings.autoheal && health < maxHealth && !isHealing) {
                 isHealing = true;
@@ -82,6 +83,33 @@ const updatePlayer = (target: TObjectAny) => {
             if (settings.autoAccept && Dsync.clanData[Dsync.props.acceptList].length) {
                 accept(true);
             }
+
+            const windmillCount = getCount(EItems.WINDMILL);
+            Dsync.automillToggle = settings.automill && Dsync.playerAGE < 10 && windmillCount < 8;
+
+            if (isDoingNothing()) {
+                if (Dsync.autobedToggle && hasResources(EObjects.SPAWN)) {
+                    place(EItems.SPAWN, random(-Math.PI, Math.PI));
+                }
+
+                const windmill: number = [
+                    EObjects.WINDMILL,
+                    EObjects.POWERMILL
+                ].find(id => Dsync.defaultData[Dsync.props.itemBar].includes(id));
+
+                if (
+                    Dsync.automillToggle &&
+                    hasResources(windmill) &&
+                    move !== 0
+                ) {
+                    place(EItems.WINDMILL, getAngleFromBitmask(move, true));
+                }
+            }
+
+            const spawnCount = getCount(EItems.SPAWN);
+            if (spawnCount === 1 && Dsync.autobedToggle) {
+                Dsync.autobedToggle = false;
+            }
         }
 
         if (settings.hatReloadBar) {
@@ -110,6 +138,12 @@ const updatePlayer = (target: TObjectAny) => {
 
                 target.weaponReload = Math.min(target.weaponReload + Dsync.step, target.weaponMaxReload);
             }
+        }
+
+        const now = Date.now();
+        if (now - start > 15000 && !isInput() && isBlind()) {
+            start = now;
+            Dsync.chat(pingCount);
         }
     }
 

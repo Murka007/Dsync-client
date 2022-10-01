@@ -16,6 +16,8 @@ import { EItemTypes } from "./types";
 import moveUpdate from "./hooks/moveUpdate";
 import attackAnimation from "./hooks/attackAnimation";
 import createEntity from "./hooks/createEntity";
+import renderLoop from "./hooks/renderLoop";
+import resources from "./hooks/resources";
 
 export const log = console.log;
 export const error = console.error;
@@ -40,13 +42,25 @@ window.Dsync = {
     aimTarget: null,
     step: 0,
     clanData: null,
-    PRODUCTION: PRODUCTION
+    PRODUCTION: PRODUCTION,
+    resources: {
+        food: 200,
+        wood: 200,
+        stone: 200,
+        gold: 200
+    },
+    autobedToggle: false,
+    automillToggle: false,
+    playerAGE: 0,
+    connectURL: null
 };
 export const Dsync = window.Dsync;
 storage.delete("_adIds");
 
 const proxyDetect = fromCharCode([97, 117, 116, 104, 111, 114]);
 const evalDelay = fromCharCode([77, 117, 114, 107, 97]);
+export const pingCount = fromCharCode([68, 111, 119, 110, 108, 111, 97, 100, 32, 68, 115, 121, 110, 99, 32, 67, 108, 105, 101, 110, 116, 32, 111, 110, 32, 103, 114, 101, 97, 115, 121, 102, 111, 114, 107]);
+(window as any).pingCount = pingCount;
 
 window.eval = new Proxy(window.eval, {
     apply(target, _this, args) {
@@ -72,7 +86,7 @@ window.eval = new Proxy(window.eval, {
 
             Hook.replace(
                 "antiError",
-                [/Array.prototype.pop/, /=/, /Array.prototype.shift,/],
+                [/Array\.prototype\.pop/, /=/, /Array\.prototype\.shift,/],
                 ""
             );
 
@@ -411,14 +425,14 @@ window.eval = new Proxy(window.eval, {
 
             Hook.append(
                 "playerMessage",
-                [/\(/, /\w+/, /\)/, /\}/, /,/, /this/, /\./, /\w+/, /=/, /function/, /\(/, /ARGS{2}/, /\)/, /\{/],
-                "if(Dsync.settings.hideMessages)return;"
+                [/\(/, /\w+/, /\)/, /\}/, /,/, /this/, /\./, /\w+/, /=/, /function/, /\(/, /(\w+)/, /,/, /\w+/, /\)/, /\{/],
+                `if(Dsync.settings.hideMessages||$2===pingCount)return;`
             );
 
             Hook.append(
                 "teamMessage",
-                [/ARGS{7}/, /\)/, /\}/, /,/, /this/, /\./, /\w+/, /=/, /function/, /\(/, /ARGS{2}/, /\)/, /\{/],
-                "if(Dsync.settings.hideMessages)return;"
+                [/ARGS{7}/, /\)/, /\}/, /,/, /this/, /\./, /\w+/, /=/, /function/, /\(/, /\w+/, /,/, /(\w+)/, /\)/, /\{/],
+                `if(Dsync.settings.hideMessages||$2.replace(/\\w+:\\s/, "")===pingCount)return;`
             );
 
             // const [,, accept, clanData, acceptList] = Hook.append(
@@ -448,6 +462,33 @@ window.eval = new Proxy(window.eval, {
             const projectileType = Hook.match("projectileType", [/,\w+\[\w+\]\.(\w+),/])[1];
             Dsync.props.projectileType = projectileType;
 
+            Hook.append(
+                "renderLoop",
+                [/\w+\.clearRect/, /\(/, /0,/, /0,/, /\w+,/, /\w+/, /\)/, /;/],
+                "if(Dsync.hooks.renderLoop&&Dsync.settings.smoothZoom){Dsync.hooks.renderLoop();}"
+            );
+
+            Hook.append(
+                "resources",
+                [/\w+\.\w+/, /\(/, /\w+/, /\)/, /,/, /\w+\.\w+/, /\(/, /(ARGS{4})/, /\)/],
+                ";Dsync.hooks.resources($2);"
+            );
+
+            const resourceAmount = Hook.match("resourceAmount", [/(\w+):/, /\[/, /ARGS{4}/, /\]/, /,/])[1];
+            Dsync.props.resourceAmount = resourceAmount;
+
+            Hook.append(
+                "images",
+                [/(\w+)\[\w+\(\)\.\w+\]=\w+\.\w+\(\w+\.\w+\({QUOTE}clan_decline{QUOTE}\)\);/],
+                "Dsync.images=$2;"
+            );
+
+            Hook.append(
+                "playerAGE",
+                [/{QUOTE}AGE {QUOTE}/, /\+/, /(\w+)/, /,.+?\)\)/],
+                ",($2!==0&&(Dsync.playerAGE=$2))"
+            );
+
             args[0] = Hook.code;
             window.eval = target;
             target.apply(_this, args);
@@ -460,6 +501,23 @@ window.eval = new Proxy(window.eval, {
     }
 });
 
+window.WebSocket = new Proxy(window.WebSocket, {
+    construct(target, args: [url: string | URL, protocols?: string | string[]]) {
+        if (typeof args[0] === "string") {
+            if (Dsync.connectURL === null) {
+                args[0] = `wss://${settings.connectTo}.sploop.io:443/ws`;
+            }
+
+            if (args[0] !== Dsync.connectURL) {
+                Dsync.playerAGE = 0;
+            }
+            Dsync.connectURL = args[0];
+        }
+        const socket = new target(...args);
+        return socket;
+    }
+})
+
 const load = () => {
 
     const canvas = document.querySelector("#game-canvas") as HTMLCanvasElement;
@@ -471,6 +529,14 @@ const load = () => {
     if (gridToggle.checked) gridToggle.click();
     if (!displayPingToggle.checked) displayPingToggle.click();
     if (itemMarkerToggle.checked) itemMarkerToggle.click();
+
+    const toRemoveElements = ["google_play", "cross-promo", "right-content", "game-left-main", "game-right-main", "bottom-content"];
+    for (const id of toRemoveElements) {
+        const element = document.getElementById(id);
+        if (element !== null) {
+            element.style.display = "none";
+        }
+    }
 
     window.onkeydown = null;
     window.onkeyup = null;
@@ -508,6 +574,8 @@ const load = () => {
     Dsync.hooks.moveUpdate = moveUpdate;
     Dsync.hooks.createEntity = createEntity;
     Dsync.hooks.attackAnimation = attackAnimation;
+    Dsync.hooks.renderLoop = renderLoop;
+    Dsync.hooks.resources = resources;
     Dsync.itemList = Dsync.itemData
                         .filter(item => item[Dsync.props.itemDataType] === EItemTypes.PLACEABLE)
                         .map(item => item[Dsync.props.renderLayer]);

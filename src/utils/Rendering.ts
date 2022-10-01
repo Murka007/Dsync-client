@@ -1,7 +1,7 @@
 import { Dsync } from "..";
 import { teammates } from "../hooks/clanHandler";
 import settings from "../modules/Settings";
-import { ELayer, IEntity, IObject, TCTX, TObjectAny } from "../types";
+import { ELayer, IEntity, IObject, TargetReload, TCTX, TObjectAny } from "../types";
 import { distance, formatObject, formatPlayer, getAngle } from "./Common";
 import { getEntities } from "./Control";
 import Images from "./Images";
@@ -165,6 +165,34 @@ export const drawBar = (
     drawImage(ctx, front);
     ctx.restore();
     return front.height * scale;
+}
+
+export const drawMarkers = (ctx: TCTX, target: TObjectAny, translate: boolean) => {
+    const object = formatObject(target);
+    if (object.ownerID === 0) return;
+
+    const position = translate ? object : { ...object, x: 0, y: 0 };
+
+    if (
+        target.type === ELayer.TURRET &&
+        settings.turretReloadBar &&
+        target.turretReload !== undefined
+    ) {
+        drawBar(ctx, position, target.turretReload, TargetReload.TURRET, settings.turretReloadBarColor);
+    }
+
+    windmillRotation(target);
+
+    const color = getMarkerColor(target, object.ownerID);
+    if (color === null) return;
+    if (translate) {
+        ctx.save();
+        ctx.translate(object.x + target.dirX, object.y + target.dirY);
+        marker(ctx, color);
+        ctx.restore();
+    } else {
+        marker(ctx, color);
+    }
 }
 
 export const drawTracers = (ctx: TCTX, entity: IEntity, isTeammate: boolean) => {

@@ -1,3 +1,5 @@
+import { IPos } from "./utils/Common";
+
 export interface ILinker {
     0: number;
     toString: (radix?: number) => string;
@@ -42,6 +44,7 @@ interface IProps {
     acceptList?: string;
     bulletType?: string;
     projectileType?: string;
+    resourceAmount?: string;
 }
 
 export type TObjectAny = { [key: string]: any };
@@ -58,6 +61,8 @@ interface IHooks {
     renderLayers?(ctx: TCTX, now: number): void;
     moveUpdate?(): void;
     createEntity?(target: TObjectAny): void;
+    renderLoop?(): void;
+    resources?(food: number, stone: number, wood: number, gold: number): void;
     attackAnimation?(type: number, id: number, weapon: number, isObject: number, entity: TObjectAny): void;
 }
 
@@ -119,6 +124,16 @@ declare global {
             aimTarget: TObjectAny;
             step: number;
             PRODUCTION: boolean;
+            resources: {
+                food: number;
+                wood: number;
+                stone: number;
+                gold: number
+            }
+            autobedToggle: boolean;
+            automillToggle: boolean;
+            playerAGE: number;
+            connectURL: string;
         }
     }
 
@@ -175,10 +190,15 @@ export interface ISettings {
     // Combat
     placementSpeed: number;
     placementType: number;
+    autobed: boolean;
+    automill: boolean;
+
     autoheal: boolean;
+
     jungleOnClown: boolean;
     lastHat: boolean;
     autoScuba: boolean;
+    
     meleeAim: boolean;
     bowAim: boolean;
     spikeInstaAim: boolean;
@@ -239,8 +259,11 @@ export interface ISettings {
     invisHitToggle: boolean;
     reverseZoom: boolean;
     autoAccept: boolean;
+    connectTo: string;
 
     menuTransparency: boolean;
+
+    blindUsers: [number, number, number];
 
     [key: string]: any;
 }
@@ -259,6 +282,8 @@ export interface IData {
     angle2: number;
     ownerID: number;
     target: TObjectAny;
+    dir: number;
+    distance: number;
 }
 
 export interface IProjectile extends IData {
@@ -353,6 +378,7 @@ export enum ELayer {
     TORNADO = 39
 }
 
+// Array of items that you can't shoot throught
 export const LayerObjects: number[] = [
     ELayer.STONE,
     ELayer.HARDSPIKE,
@@ -380,6 +406,38 @@ export const LayerObjects: number[] = [
     ELayer.CACTUS
 ]
 
+// Array of items you can't place on
+export const CannotPlaceOn: number[] = [
+    ELayer.STONE,
+    ELayer.HARDSPIKE,
+    ELayer.TREE,
+    ELayer.GOLD,
+    ELayer.BUSH,
+    ELayer.TRAP,
+    ELayer.SPIKE,
+    ELayer.WOODWALL,
+    ELayer.PLATFORM,
+    ELayer.BOOST,
+    ELayer.LOOTBOX,
+    ELayer.WINDMILL,
+    ELayer.SPAWN,
+    ELayer.POWERMILL,
+    ELayer.CASTLESPIKE,
+    ELayer.TURRET,
+    ELayer.WOODFARM,
+    ELayer.CHERRYWOODFARM,
+    ELayer.STONEWARM,
+    ELayer.CASTLEWALL,
+    ELayer.CHEST,
+    ELayer.DRAGONWALLBIG,
+    ELayer.DRAGONWALLMEDIUM,
+    ELayer.DRAGONWALLSMALL,
+    ELayer.MAMMOTHWALL,
+    ELayer.MAMMOTHWALLSMALL,
+    ELayer.TELEPORT,
+    ELayer.CACTUS,
+]
+
 export const LayerExclude: number[] = [
     ELayer.TREE,
     // ELayer.WINDMILL,
@@ -392,6 +450,9 @@ export enum EObjects {
     BOOST = 6,
     PLATFORM = 8,
     TRAP = 9,
+    WINDMILL = 14,
+    SPAWN = 16,
+    POWERMILL = 19,
     ROOF = 48
 }
 
@@ -443,8 +504,23 @@ export enum PlacementType {
     HOLDING
 }
 
+export enum EServers {
+    SAND_EU_1 = "SFRA",
+    SAND_EU_2 = "SFRA2BIS",
+    SAND_USA_1 = "SCA",
+    SAND_USA_2 = "SCA2",
+    SAND_AS_1 = "SGP",
+    SAND_AS_2 = "SGP2",
+    SAND_AS_3 = "SGP3BIS",
+    NORMAL_EU_1 = "FRA1FFA",
+    NORMAL_USA_1 = "CA1FFA",
+    NORMAL_AS_1 = "SGP1FFA",
+    ROYALE_USA_1 = "BRSCA",
+}
+
 export const selectData = {
-    placementType: PlacementType
+    placementType: PlacementType,
+    connectTo: EServers
 }
 
 export enum TargetReload {

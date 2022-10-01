@@ -64,6 +64,9 @@ export const defaultSettings: Readonly<ISettings> = {
     // Combat
     placementType: PlacementType.INVISIBLE,
     placementSpeed: 1,
+    autobed: true,
+    automill: true,
+    
     autoheal: true,
     jungleOnClown: true,
     lastHat: true,
@@ -133,8 +136,10 @@ export const defaultSettings: Readonly<ISettings> = {
     invisHitToggle: false,
     reverseZoom: false,
     autoAccept: false,
+    connectTo: "SFRA",
     
     menuTransparency: false,
+    blindUsers: [0, 0, 0],
 };
 
 const settings: ISettings = { ...defaultSettings, ...storage.get("Dsync-settings") as ISettings };

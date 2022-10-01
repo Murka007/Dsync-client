@@ -1,7 +1,7 @@
 import { Dsync, log } from "..";
-import { equipHat, reset, spawn } from "../modules/Controller";
+import { equipHat, place, reset, spawn } from "../modules/Controller";
 import settings from "../modules/Settings";
-import { WebsocketString } from "../types";
+import { EObjects, WebsocketString } from "../types";
 
 let kills = 0;
 const stringMessage = (data: [number, ...any[]]) => {
@@ -13,10 +13,14 @@ const stringMessage = (data: [number, ...any[]]) => {
         equipHat(Dsync.actualHat, true);
     }
 
-    if (id === WebsocketString.UPGRADE && settings.skipUpgrades) {
+    if (id === WebsocketString.UPGRADE) {
         const upgradeBar: number[] = data[1];
-        if (upgradeBar.length === 1) {
-            Dsync.upgradeItem(upgradeBar[0]);
+        const item = upgradeBar[0];
+
+        const canAutobed = settings.autobed && upgradeBar.includes(EObjects.SPAWN);
+        Dsync.autobedToggle = canAutobed;
+        if (settings.skipUpgrades && upgradeBar.length === 1 || canAutobed) {
+            Dsync.upgradeItem(canAutobed ? EObjects.SPAWN : item);
         }
     }
 

@@ -1,10 +1,10 @@
 import { Dsync, log } from "..";
-import { EHats, EItems, EWeapons, PlacementType } from "../types";
-import { angleObject, inGame, isInput, sleep } from "../utils/Common";
-import { canShoot, futurePosition, getNearestPossibleEnemy, hasItemByType, hasSecondary, itemBar, upgradeScythe } from "../utils/Control";
+import { EHats, EItems, EWeapons, PlacementType, TargetReload } from "../types";
+import { angleObject, inGame, IPos, isInput, sleep } from "../utils/Common";
+import { canShoot, futurePosition, getNearestPossibleEnemy, hasItemByType, hasResources, hasSecondary, itemBar, upgradeScythe } from "../utils/Control";
 import settings from "./Settings";
 
-let move = 0;
+export let move = 0;
 let attacking = false;
 let autoattack = false;
 export let weapon = false;
@@ -12,7 +12,29 @@ let isHealing = false;
 let attackingInvis = false;
 let toggleInvis = false;
 let currentItem: number = null;
+let currentItemID: number = null;
 const hotkeys = new Map<string | number, number>();
+
+export const isDoingNothing = () => {
+    return (
+        !isHealing &&
+        !attackingInvis &&
+        currentItem === null
+    )
+}
+
+export const getAngleFromBitmask = (bitmask: number, rotate: boolean) => {
+    const pos: IPos = { x2: 0, y2: 0};
+    if (bitmask & 0b0001) pos.y2--;
+    if (bitmask & 0b0010) pos.y2++;
+    if (bitmask & 0b0100) pos.x2--;
+    if (bitmask & 0b1000) pos.x2++;
+    if (rotate) {
+        pos.x2 *= -1;
+        pos.y2 *= -1;
+    }
+    return Math.atan2(pos.y2, pos.x2);
+}
 
 export const accept = (accept: boolean) => {
     Dsync.accept(accept);
@@ -20,7 +42,7 @@ export const accept = (accept: boolean) => {
 }
 
 export const spawn = async () => {
-    await sleep(100);
+    await sleep(300);
     const play = document.querySelector("#play") as HTMLDivElement;
     if (play) play.click();
 }
@@ -48,6 +70,7 @@ export const reset = () => {
     attackingInvis = false;
     toggleInvis = false;
     currentItem = null;
+    currentItemID = null;
     for (const [key] of hotkeys) {
         hotkeys.delete(key);
     }
@@ -78,13 +101,14 @@ const attack = (angle: number = null) => {
 }
 
 export const place = (id: number, angle: number = null) => {
+    const isHolding = settings.placementType === PlacementType.HOLDING;
     whichWeapon();
-    if (attacking || autoattack) attack(angle);
+    if (isHolding && attacking) attack(angle);
     Dsync.selectItem(id);
     attack(angle);
     Dsync.stopAttack();
-    if (settings.placementType !== PlacementType.HOLDING) whichWeapon();
-    if (attacking || autoattack) attack(angle);
+    if (!isHolding) whichWeapon();
+    if (attacking) attack(angle);
 }
 
 let count = 0;
@@ -100,7 +124,9 @@ const placement = () => {
 }
 
 const placementHandler = (type: number, code: string | number) => {
-    if (!hasItemByType(type)) return;
+    const item = hasItemByType(type);
+    if (item === undefined) return;
+    if (!hasResources(item)) return;
 
     if (settings.placementType === PlacementType.DEFAULT) {
         Dsync.selectItem(type);
@@ -109,6 +135,7 @@ const placementHandler = (type: number, code: string | number) => {
 
     hotkeys.set(code, type);
     currentItem = type;
+    currentItemID = item;
 
     if (hotkeys.size === 1) {
         placement();
@@ -147,12 +174,13 @@ const invisibleHit = () => {
     let angle = null;
     const enemy = getNearestPossibleEnemy(+!weapon);
     const shoot = canShoot() && !weapon;
+
     if (enemy && (settings.meleeAim && !shoot || settings.bowAim && shoot)) {
-        // angle = enemy.dir;
         angle = angleObject(futurePosition(enemy), futurePosition(Dsync.myPlayer));
         Dsync.mousemove = false;
         Dsync.aimTarget = enemy.target;
     }
+
     if (enemy && shoot || !shoot) {
         whichWeapon(!weapon);
         attack(angle);
@@ -209,9 +237,11 @@ const fastBreakStop = async () => {
     Dsync.stopAttack();
     attacking = false;
     whichWeapon(oldWeapon);
+
     const step = Date.now() - startFastBreak;
-    if (step < 1300) await sleep(1300 - step);
+    if (step < TargetReload.HAT) await sleep(TargetReload.HAT - step);
     if (!Dsync.myPlayer.isClown) equipHat(fastBreakHat);
+    
     fastBreaking = false;
 }
 
@@ -332,6 +362,7 @@ const handleKeyup = (event: KeyboardEvent | MouseEvent, code: string | number) =
         currentItem = entries.length ? entries[entries.length-1][1] : null;
 
         if (currentItem === null) {
+            currentItemID = null;
             whichWeapon();
         }
     }

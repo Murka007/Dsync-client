@@ -1,4 +1,5 @@
 import { Dsync } from "..";
+import settings from "../modules/Settings";
 import { IData, IEntity, ILinker, IObject, IPlayer, IProjectile, TObjectAny } from "../types";
 
 export const TYPEOF = (value: any): string => {
@@ -63,7 +64,7 @@ export const inGame = () => {
 }
 
 export const formatData = (object: TObjectAny): Readonly<IData> => {
-    return {
+    const data = {
         id: object[Dsync.props.id],
         type: object.type,
         x: object[Dsync.props.x],
@@ -77,6 +78,12 @@ export const formatData = (object: TObjectAny): Readonly<IData> => {
         angle2: object[Dsync.props.angle2],
         ownerID: object[Dsync.props.itemOwner],
         target: object
+    };
+
+    return {
+        ...data,
+        dir: angleObject(data, Dsync.myPlayer || { x2: 0, y2: 0 }),
+        distance: distObject(data, Dsync.myPlayer || { x2: 0, y2: 0 })
     }
 }
 
@@ -152,7 +159,7 @@ export const angle = (x1: number, y1: number, x2: number, y2: number) => {
     return Math.atan2(y1 - y2, x1 - x2);
 }
 
-interface IPos {
+export interface IPos {
     x2: number;
     y2: number;
 }
@@ -168,6 +175,16 @@ export const getAngle = (entity1: EntityObject, entity2: EntityObject): Readonly
         lerpAngle: entity1Has && entity2Has ? Math.atan2(entity1.y-entity2.y, entity1.x-entity2.x) : null,
         angle: Math.atan2(entity1.y2-entity2.y2, entity1.x2-entity2.x2),
     }
+}
+
+export const random = (min: number, max: number) => {
+    const isInteger = Number.isInteger(min) && Number.isInteger(max);
+    if (isInteger) return Math.floor(Math.random() * (max - min + 1) + min);
+    return Math.random() * (max - min) + min;
+}
+
+export const toRad = (deg: number) => {
+    return deg * (Math.PI / 180);
 }
 
 export const diff = (a: number, b: number) => {
@@ -222,4 +239,8 @@ export const GM = (property: string, value: string) => {
 
 export const fromCharCode = (codes: number[]): string => {
     return codes.map(code => String.fromCharCode(code)).join("");
+}
+
+export const isBlind = () => {
+    return !settings.blindUsers.every(a => a === 1);
 }

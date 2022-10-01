@@ -14,5 +14,9 @@
         background: $hotkeyInput-bg-color;
         color: $hotkeyInput-color;
         box-shadow: 0px 4px 0px 0px $hotkeyInput-bg-color-shadow inset;
+
+        &.smaller {
+            width: $input-width;
+        }
     }
 }

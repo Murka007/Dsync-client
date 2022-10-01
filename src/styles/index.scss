@@ -4,8 +4,7 @@
 html, body {
     margin: 0;
     padding: 0;
-    background:
-    transparent!important;
+    background: transparent!important;
 
     scrollbar-width: 10px;
     scrollbar-track-color: $sub-alt-bg-color;
@@ -48,6 +47,7 @@ h1, h2, h3, h4, p {
 }
 
 #menu-wrapper {
+    position: relative;
     display: flex;
     flex-direction: column;
 
@@ -104,4 +104,169 @@ input[id][type=color] {
 ::-webkit-scrollbar-thumb {
     background: $scrollbar-color;
     border-radius: $roundness * 2;
+}
+
+#popup-menu {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    width: 100%;
+    height: 100%;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    background: rgba(25, 25, 35, 0.5);
+
+    #popup-container {
+        position: relative;
+        width: 70%;
+        height: 50%;
+
+        background: $sub-bg-color;
+        border-radius: $roundness * 2;
+        border: 6px solid $sub-alt-bg-color;
+        padding: $padding;
+
+        display: flex;
+        justify-content: space-between;
+
+        #popup-wrapper {
+            position: absolute;
+            z-index: 1;
+            top: 10px;
+            left: 10px;
+            bottom: 10px;
+            right: 10px;
+            padding: 10px;
+
+            > div {
+                width: 50%;
+                height: 100%;
+            }
+
+            display: flex;
+            justify-content: space-between;
+
+            #popup-data {
+                display: flex;
+                flex-direction: column;
+            }
+        }
+
+        #popup-title {
+            font-size: 2em;
+            color: $text-color;
+            @include stroke($text-color-stroke);
+        }
+
+        #popup-description {
+            color: $text-color-dark;
+            @include stroke($text-color-stroke);
+
+            margin-left: 30px;
+            margin-top: 30px;
+        }
+
+        #popup-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: auto;
+
+            .popup-button {
+                border: none;
+                outline: none;
+
+                display: inline-block;
+                font-family: "Lato", sans-serif;
+                text-align: center;
+                cursor: pointer;
+
+                max-width: 160px;
+                width: 100%;
+                font-size: 0.8em;
+                font-weight: 900;
+                padding: 5px 10px 10px;
+                border-radius: $roundness;
+
+                color: $text-color;
+                text-decoration: none;
+                @include stroke($text-color-stroke);
+
+                &#popup-continue {
+                    background: $hotkeyInput-bg-color-green;
+                    box-shadow: 0px -6px 0px 0px $hotkeyInput-bg-color-green-shadow inset;
+
+                    &:active {
+                        padding: 10px 10px 5px;
+                        box-shadow: 0px 3px 0px 0px $hotkeyInput-bg-color-green-shadow inset;
+                    }
+                }
+
+                &#popup-close {
+                    background: $hotkeyInput-bg-color-red;
+                    box-shadow: 0px -6px 0px 0px $hotkeyInput-bg-color-shadow-red inset;
+
+                    &:active {
+                        padding: 10px 10px 5px;
+                        box-shadow: 0px 3px 0px 0px $hotkeyInput-bg-color-shadow-red inset;
+                    }
+                }
+            }
+        }
+
+        #popup-prev {
+            display: flex;
+            justify-content: right;
+            align-items: center;
+
+            img {
+                width: auto;
+                height: auto;
+
+                max-width: 100%;
+                max-height: 100%;
+            }
+        }
+    }
+}
+
+#image-background {
+    position: absolute;
+    animation: moving 60s infinite linear;
+    padding: 10px;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    filter: opacity(0.4);
+}
+
+.discord-bg {
+    background: url(https://i.imgur.com/RcTl09i.png) 0 0/8% repeat;
+    background-clip: content-box;
+}
+
+.github-bg {
+    background: url(https://i.imgur.com/q0z20jB.png) 0 0/8% repeat;
+    background-clip: content-box;
+}
+
+.greasyfork-bg {
+    background: url(https://i.imgur.com/y6OYX0D.png) 0 0/8% repeat;
+    background-clip: content-box;
+}
+
+@keyframes moving {
+    0% {
+      background-position: 0 0;
+    }
+  
+    100% {
+      background-position: -500px 500px;
+    }
 }

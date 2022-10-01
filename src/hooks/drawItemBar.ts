@@ -17,7 +17,7 @@ const drawItemBar = (ctx: TCTX, imageData: TObjectAny, index: number) => {
     const y = imageData[Dsync.props.y] + 10;
     const w = imageData.width;
 
-    renderText(ctx, `${currentCount}/${maxCount}`, (width, height) => {
+    renderText(ctx, `${currentCount}/${maxCount}`, (width) => {
         return [
             x + w - width,
             y

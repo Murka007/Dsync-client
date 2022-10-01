@@ -1,7 +1,7 @@
 import { Dsync, log } from ".."
 import { teammates } from "../hooks/clanHandler";
-import { EAnimals, EItems, EItemTypes, ELayer, EWeapons, IEntity, IPlayer, LayerExclude, LayerObjects } from "../types";
-import { angle, dist, distance, formatEntity, formatObject, formatPlayer, getAngle, sleep } from "./Common";
+import { CannotPlaceOn, EAnimals, EItems, EItemTypes, ELayer, EWeapons, IEntity, IObject, IPlayer, LayerExclude, LayerObjects } from "../types";
+import { angle, angleObject, dist, distance, distObject, formatEntity, formatObject, formatPlayer, getAngle, sleep } from "./Common";
 
 export const itemBar = (index: number) => {
     return Dsync.defaultData[Dsync.props.itemBar][index];
@@ -18,7 +18,7 @@ export const canShoot = () => {
 
 export const hasItemByType = (type: number) => {
     const items: number[] = Dsync.defaultData[Dsync.props.itemBar];
-    return items.some(id => Dsync.itemData[id][Dsync.props.itemType] === type);
+    return items.find(id => Dsync.itemData[id][Dsync.props.itemType] === type);
 }
 
 export const isWeapon = (id: number) => {
@@ -34,6 +34,21 @@ export const isSecondary = (id: number) => {
 export const isStoneGold = () => {
     const item = Dsync.itemData[itemBar(0)];
     return [1, 2].includes(item[Dsync.props.weaponType]);
+}
+
+export const getCount = (type: number) => {
+    return Dsync.defaultData[Dsync.props.currentCount][type];
+}
+
+export const hasResources = (id: number) => {
+    const cost = Dsync.itemData[id][Dsync.props.resourceAmount] || [0, 0, 0, 0];
+    const { food, wood, stone, gold } = Dsync.resources;
+
+    const hasFood = food >= cost[0];
+    const hasWood = wood >= cost[1];
+    const hasStone = stone >= cost[2];
+    const hasGold = gold >= cost[3];
+    return hasFood && hasWood && hasStone && hasGold;
 }
 
 let scytheToggle = false;
@@ -86,6 +101,17 @@ export const getEntities = (): IEntity[] => {
     ]
 }
 
+export const getPlaceOnItems = (): IObject[] => {
+    const entities = Dsync.entityList();
+    const objects: IObject[] = [];
+    for (let i=0;i<CannotPlaceOn.length;i++) {
+        const id = CannotPlaceOn[i];
+        const items = entities[id].map(object => formatObject(object));
+        objects.push(...items);
+    }
+    return objects.sort((a, b) => a.distance - b.distance);
+}
+
 export const lineSegmentIntersectsCircle = (
     x1: number,
     y1: number,
@@ -128,8 +154,8 @@ export const getNearestEntities = (shoot: boolean): IEnemy[] => {
     const enemies = getEnemies().map(enemy => {
         return {
             ...enemy,
-            dir: getAngle(enemy, Dsync.myPlayer).angle,
-            distance: distance(enemy, Dsync.myPlayer).dist
+            dir: angleObject(enemy, Dsync.myPlayer),
+            distance: distObject(enemy, Dsync.myPlayer)
         }
     }).sort((a, b) => a.distance - b.distance);
     
@@ -144,8 +170,8 @@ export const getNearestEntities = (shoot: boolean): IEnemy[] => {
     const animals = getAnimals().map(enemy => {
         return {
             ...enemy,
-            dir: getAngle(enemy, Dsync.myPlayer).angle,
-            distance: distance(enemy, Dsync.myPlayer).dist
+            dir: angleObject(enemy, Dsync.myPlayer),
+            distance: distObject(enemy, Dsync.myPlayer)
         }
     }).sort((a, b) => a.distance - b.distance);
     return [ ...enemies, ...animals ];
@@ -169,8 +195,8 @@ export const projectileCanHitEntity = (entity: IEntity): Readonly<IHitData> | fa
     const range = Dsync.itemData[itemBar(EItems.SECONDARY)].range;
     const enemy: IEnemy = {
         ...entity,
-        dir: getAngle(entity, Dsync.myPlayer).angle,
-        distance: distance(entity, Dsync.myPlayer).dist
+        dir: angleObject(entity, Dsync.myPlayer),
+        distance: distObject(entity, Dsync.myPlayer)
     }
     const x1 = Dsync.myPlayer.x2;
     const y1 = Dsync.myPlayer.y2;
@@ -189,7 +215,7 @@ export const projectileCanHitEntity = (entity: IEntity): Readonly<IHitData> | fa
 
         for (const entity of layers[layer]) {
             const object = formatObject(entity);
-            const dist = distance(object, Dsync.myPlayer).dist;
+            const dist = distObject(object, Dsync.myPlayer);
             if (dist > enemy.distance) continue;
             if (lineSegmentIntersectsCircle(
                 x1, y1, x2, y2,

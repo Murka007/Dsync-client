@@ -56,6 +56,14 @@ const createMenu = () => {
         .iframe-opened {
             display: block!important;
         }
+
+        #main-content {
+            background: none;
+        }
+
+        #game-content {
+            justify-content: center;
+        }
     `;
 
     const IFRAME = document.createElement("iframe");
@@ -74,6 +82,7 @@ const createMenu = () => {
         URL.revokeObjectURL(IFRAME.src);
 
         const menuContainer = iframeDocument.getElementById("menu-container") as HTMLDivElement;
+        const menuWrapper = iframeDocument.getElementById("menu-wrapper") as HTMLDivElement;
         const openMenu = iframeDocument.querySelectorAll(".open-menu") as NodeListOf<HTMLButtonElement>;
         const menuPage = iframeDocument.querySelectorAll(".menu-page") as NodeListOf<HTMLDivElement>;
         const sections = iframeDocument.querySelectorAll(".section") as NodeListOf<HTMLDivElement>;
@@ -90,7 +99,103 @@ const createMenu = () => {
         const menuTransparency = iframeDocument.querySelector("#menuTransparency") as HTMLInputElement;
         const colorPickers = iframeDocument.querySelectorAll("input[type='color'][id]") as NodeListOf<HTMLInputElement>;
         const selects = iframeDocument.querySelectorAll("select[id]") as NodeListOf<HTMLSelectElement>;
-        const botList = iframeDocument.querySelector("#botList") as HTMLDivElement;
+
+        interface IPopup {
+            index: number;
+            title: string;
+            description: string;
+            link: string;
+            prev: string;
+        }
+
+        let popupCount = 0;
+        const popups: IPopup[] = [
+            {
+                index: 0,
+                title: "Discord",
+                description: "Join our community!",
+                link: "https://discord.gg/sG9cyfGPj5",
+                prev: "https://i.imgur.com/DuLtryo.png"
+            },
+            {
+                index: 1,
+                title: "Github",
+                description: "Star a repository!",
+                link: "https://github.com/Murka007/Dsync-client",
+                prev: "https://i.imgur.com/u4aX4G1.png"
+            },
+            {
+                index: 2,
+                title: "Greasyfork",
+                description: "Write a feedback!",
+                link: "https://greasyfork.org/en/scripts/449995-dsync-client-sploop-io/feedback#post-discussion",
+                prev: "https://i.imgur.com/L1YP7cK.png"
+            }
+        ]
+
+        const pickPopup = () => {
+            const pups = popups.filter((popup, index) => settings.blindUsers[index] === 0);
+            if (pups.length) {
+                const popup = pups[popupCount++];
+                popupCount %= pups.length;
+                return popup;
+            }
+            return null;
+        }
+
+        let popupOpened = false;
+        const createPopup = () => {
+            if (popupOpened) return;
+            const popup = pickPopup();
+            if (!popup) return;
+            popupOpened = true;
+
+            const div = document.createElement("div");
+            div.innerHTML = `
+                <div id="popup-menu">
+                    <div id="popup-container">
+                        <div id="image-background" class="${popup.title.toLowerCase()}-bg"></div>
+
+                        <div id="popup-wrapper">
+                            <div id="popup-data">
+                                <div id="popup-title">${popup.title}</div>
+                                <div id="popup-description">${popup.description}</div>
+
+                                <div id="popup-bottom">
+                                    <a id="popup-continue" class="popup-button" href="${popup.link}" target="_blank">CONTINUE</a>
+                                    <button id="popup-close" class="popup-button">CLOSE</button>
+                                </div>
+                            </div>
+
+                            <div id="popup-prev">
+                                <img src="${popup.prev}"></img>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            const popupMenu = div.querySelector("#popup-menu") as HTMLDivElement;
+            const container = div.querySelector("#popup-container") as HTMLDivElement;
+            const continuePopup = div.querySelector("#popup-continue") as HTMLButtonElement;
+            const closePopup = div.querySelector("#popup-close") as HTMLButtonElement;
+
+            continuePopup.onclick = () => {
+                popupCount -= 1;
+                settings.blindUsers[popup.index] = 1;
+                storage.set("Dsync-settings", settings);
+            }
+
+            closePopup.onclick = () => {
+                container.style.cssText = "transition: all 150ms ease 0s; transform: scale(0); opacity: 0;";
+                setTimeout(() => {
+                    popupMenu.remove();
+                    popupOpened = false;
+                }, 150);
+            }
+
+            menuWrapper.appendChild(popupMenu);
+        }
 
         const update = () => {
 
@@ -98,11 +203,12 @@ const createMenu = () => {
                 const data = selectData[select.id as keyof typeof selectData];
                 for (const key in data) {
                     if (!isNaN(Number(key))) continue;
+                    const keyValue = key as keyof typeof data;
 
                     const option = document.createElement("option");
-                    option.value = data[key];
-                    option.textContent = capitalize(key);
-                    if (data[key] === settings[select.id]) {
+                    option.value = data[keyValue];
+                    option.textContent = capitalize(keyValue);
+                    if (data[keyValue] === settings[select.id]) {
                         option.selected = true;
                         option.defaultSelected = true;
                     }
@@ -110,7 +216,7 @@ const createMenu = () => {
                 }
 
                 select.onchange = () => {
-                    settings[select.id] = Number(select.value);
+                    settings[select.id] = select.value;
                     storage.set("Dsync-settings", settings);
                 }
             }
@@ -188,10 +294,17 @@ const createMenu = () => {
                 }
             }
 
+            let popupCount = 0;
+
             // Make Menu toggleable
             Dsync.toggleMenu = () => {
                 menuContainer.classList.toggle("close");
-                menuContainer.classList.toggle("open");
+                if (menuContainer.classList.toggle("open") && !popupOpened) {
+                    popupCount += 1;
+                    if ((popupCount %= 5) === 0) {
+                        createPopup();
+                    }
+                }
                 setTimeout(() => {
                     IFRAME.classList.toggle("iframe-opened");
                 }, 100);
