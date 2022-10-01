@@ -216,7 +216,8 @@ const createMenu = () => {
                 }
 
                 select.onchange = () => {
-                    settings[select.id] = select.value;
+                    const dataValue = /^\d+$/.test(String(select.value)) ? Number(select.value) : select.value;
+                    settings[select.id] = dataValue;
                     storage.set("Dsync-settings", settings);
                 }
             }
