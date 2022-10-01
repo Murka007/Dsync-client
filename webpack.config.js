@@ -69,11 +69,12 @@ if (isProd) {
     Author: Murka
     Github: https://github.com/Murka007/Dsync-client
     Discord: https://discord.gg/sG9cyfGPj5
-    Greasyfork: https://greasyfork.org/en/users/919633
+    Greasyfork: https://greasyfork.org/en/scripts/449995-dsync-client-sploop-io
 
-    PLEASE, I NEED YOUR SUPPORT ON GITHUB (GIVE ME A STAR ON MY REPOSITORY),
-    ALSO SUPPORT THIS SCRIPT ON GREASYFORK (register and write a comment: "this script works, thank you so much"),
-    FOR MORE UPDATES JOIN MY DISCORD SERVER!!!
+    I need your support, please follow these steps:
+    1. Join my DISCORD server
+    2. Write a feedback about this script on GREASYFORK "script works, thank you so much"
+    3. Star my repository on GITHUB
 */\n\nFunction("(" + {CODE}.toString() + \`)(\${JSON.stringify(GM_info)});\`)();`)
     )
 }
@@ -111,7 +112,7 @@ module.exports = {
                     parse: false,
                     output: false,
                     format: {
-                        beautify: true
+                        beautify: true,
                     }
                 }
             })
