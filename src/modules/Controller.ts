@@ -109,7 +109,6 @@ export default class Controller {
                 this.equipHat(Hat.DEMOLIST, false);
                 this.attacking = true;
                 this.attack();
-                log("EQUIP");
             },
             () => {
                 this.PacketManager.stopAttack();
