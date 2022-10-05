@@ -1,4 +1,6 @@
 import { Dsync, log } from "..";
+import { Items } from "../constants/Items";
+import { ELayer } from "../constants/LayerData";
 import settings from "../modules/Settings";
 import { TObjectAny } from "../types";
 
@@ -9,8 +11,8 @@ const attackAnimation = (
     isObject: number,
     entity: TObjectAny
 ) => {
-    if (type === 0 && settings.weaponReloadBar) {
-        const reload = Dsync.itemData[weapon].reload;
+    if (type === ELayer.PLAYER && settings.weaponReloadBar) {
+        const reload = Items[weapon].reload || 0;
         entity.weaponMaxReload = reload;
         entity.weaponReload = -Dsync.step;
     }

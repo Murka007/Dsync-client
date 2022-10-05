@@ -102,7 +102,6 @@ export const defaultSettings: Readonly<ISettings> = {
     teammateMarkersColor: "#cfbc5f",
     enemyMarkersColor: "#cc5151",
     trapActivatedColor: "#48b2b8",
-    markersBottom: true,
 
     hatReloadBar: true,
     hatReloadBarColor: "#5155cc",

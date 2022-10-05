@@ -1,374 +1,551 @@
-import { Dsync, log } from "..";
-import { EHats, EItems, EWeapons, PlacementType, TargetReload } from "../types";
-import { angleObject, inGame, IPos, isInput, sleep } from "../utils/Common";
-import { canShoot, futurePosition, getNearestPossibleEnemy, hasItemByType, hasResources, hasSecondary, itemBar, upgradeScythe } from "../utils/Control";
+import { controller, Dsync, log } from "..";
+import { Hat, Hats } from "../constants/Hats";
+import { ActionType, Items, ItemType } from "../constants/Items";
+import { ELayer } from "../constants/LayerData";
+import { EWeapons, PlacementType, TargetReload, TObjectAny } from "../types";
+import { doWhile, Formatter, IEntity, isInput, sleep, TypeEntity } from "../utils/Common";
+import { EntityManager } from "../utils/Control";
+import PacketManager from "./PacketManager";
 import settings from "./Settings";
+import { TimeoutManager } from "./TimeoutManager";
+import Vector from "./Vector";
 
-export let move = 0;
-let attacking = false;
-let autoattack = false;
-export let weapon = false;
-let isHealing = false;
-let attackingInvis = false;
-let toggleInvis = false;
-let currentItem: number = null;
-let currentItemID: number = null;
-const hotkeys = new Map<string | number, number>();
+export default class Controller {
+    move: number;
+    private attacking: boolean;
+    private autoattack: boolean;
+    private rotation: boolean;
+    weapon: boolean;
+    private healing: boolean;
+    private attackingInvis: boolean;
+    private toggleInvis: boolean;
+    private currentItem: number;
+    private chatToggle: boolean;
+    private chatCount: number;
+    private mousemove: boolean;
+    age: number;
+    autobed: boolean;
+    automill: boolean;
+    automillSpawn: boolean;
+    kills: number;
+    inGame: boolean;
+    itemBar: number[];
+    readonly maxCount: Readonly<number[]>;
+    hsl: number;
+    aimTarget: TObjectAny;
 
-export const isDoingNothing = () => {
-    return (
-        !isHealing &&
-        !attackingInvis &&
-        currentItem === null
-    )
-}
-
-export const getAngleFromBitmask = (bitmask: number, rotate: boolean) => {
-    const pos: IPos = { x2: 0, y2: 0};
-    if (bitmask & 0b0001) pos.y2--;
-    if (bitmask & 0b0010) pos.y2++;
-    if (bitmask & 0b0100) pos.x2--;
-    if (bitmask & 0b1000) pos.x2++;
-    if (rotate) {
-        pos.x2 *= -1;
-        pos.y2 *= -1;
-    }
-    return Math.atan2(pos.y2, pos.x2);
-}
-
-export const accept = (accept: boolean) => {
-    Dsync.accept(accept);
-    Dsync.clanData[Dsync.props.acceptList].shift();
-}
-
-export const spawn = async () => {
-    await sleep(300);
-    const play = document.querySelector("#play") as HTMLDivElement;
-    if (play) play.click();
-}
-
-let chatCount = 0;
-let chatToggle = false;
-export const autochat = async () => {
-    if (chatToggle || isInput() || !inGame()) return;
-    chatToggle = true;
-
-    const messages = settings.autochatMessages.filter(msg => msg.length);
-    if (!messages.length) return;
-    Dsync.chat(messages[chatCount++]);
-    chatCount %= messages.length;
-    await sleep(2000);
-    chatToggle = false;
-}
-
-export const reset = () => {
-    move = 0;
-    attacking = false;
-    autoattack = false;
-    weapon = false;
-    isHealing = false;
-    attackingInvis = false;
-    toggleInvis = false;
-    currentItem = null;
-    currentItemID = null;
-    for (const [key] of hotkeys) {
-        hotkeys.delete(key);
-    }
-}
-
-export const equipHat = (id: number, ignore = false, actual = true) => {
-    const hat = (Dsync.myPlayer || {}).hat || 0;
-    if (id === 0) {
-        id = hat;
-    } else if (hat === id && !ignore) return;
-    if (actual) {
-        Dsync.actualHat = id;
-    }
-    Dsync.equipHat(id);
-    Dsync.equipHat(id);
-}
-
-export const whichWeapon = (type?: boolean) => {
-    if (type !== undefined) {
-        weapon = type;
+    private count: number;
+    private readonly hotkeys: Map<string | number, number>;
+    readonly PacketManager: PacketManager;
+    resources: {
+        readonly food: number;
+        readonly wood: number;
+        readonly stone: number;
+        readonly gold: number;
     }
 
-    Dsync.selectByID(itemBar(Number(weapon)));
-}
+    equipStart: number;
+    actualHat: number;
+    currentHat: number;
+    previousHat: number;
+    toggleJungle: boolean;
+    toggleScuba: boolean;
 
-const attack = (angle: number = null) => {
-    Dsync.attack(angle !== null ? angle : Dsync.getAngle());
-}
+    fastbreakHat: number;
+    private previousWeapon: boolean;
+    readonly fastbreak: TimeoutManager;
 
-export const place = (id: number, angle: number = null) => {
-    const isHolding = settings.placementType === PlacementType.HOLDING;
-    whichWeapon();
-    if (isHolding && attacking) attack(angle);
-    Dsync.selectItem(id);
-    attack(angle);
-    Dsync.stopAttack();
-    if (!isHolding) whichWeapon();
-    if (attacking) attack(angle);
-}
+    constructor() {
+        this.move = 0;
+        this.attacking = false;
+        this.autoattack = false;
+        this.rotation = false;
+        this.weapon = false;
+        this.healing = false;
+        this.attackingInvis = false;
+        this.toggleInvis = false;
+        this.currentItem = null;
+        this.chatToggle = false;
+        this.chatCount = 0;
+        this.autobed = false;
+        this.automill = false;
+        this.automillSpawn = false;
+        this.mousemove = true;
+        this.kills = 0;
+        this.inGame = false;
+        this.itemBar = [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1];
+        this.hsl = 0;
+        this.aimTarget = null;
 
-let count = 0;
-const placement = () => {
-    if (currentItem === null) return;
-    place(currentItem);
-    count++;
-    if ((count %= settings.placementSpeed) === 0) {
-        setTimeout(placement);
-    } else {
-        queueMicrotask(placement);
-    }
-}
+        this.count = 0;
 
-const placementHandler = (type: number, code: string | number) => {
-    const item = hasItemByType(type);
-    if (item === undefined) return;
-    if (!hasResources(item)) return;
+        this.toggleJungle = false;
+        this.toggleScuba = false;
 
-    if (settings.placementType === PlacementType.DEFAULT) {
-        Dsync.selectItem(type);
-        return;
-    }
+        this.resources = {
+            food: 200,
+            wood: 200,
+            stone: 200,
+            gold: 200
+        }
 
-    hotkeys.set(code, type);
-    currentItem = type;
-    currentItemID = item;
+        this.equipStart = Date.now();
+        this.actualHat = 0;
+        this.currentHat = 0;
+        this.previousHat = 0;
 
-    if (hotkeys.size === 1) {
-        placement();
-    }
-}
+        this.maxCount = [0, 0, 0, 100, 30, 8, 2, 12, 32, 1, 2];
+        this.age = 0;
+        this.hotkeys = new Map();
+        this.PacketManager = new PacketManager();
+        this.fastbreak = new TimeoutManager([
+            () => {
+                const primary = this.itemBar[ItemType.PRIMARY];
+                const secondary = this.itemBar[ItemType.SECONDARY];
+                const pickWeapon = secondary === EWeapons.HAMMER || primary === EWeapons.STICK && secondary === EWeapons.SHIELD;
 
-export const heal = () => {
-    Dsync.selectItem(EItems.HEAL);
-    attack();
-    Dsync.stopAttack();
-    whichWeapon();
-    if (attacking) {
-        attack();
-    }
-}
-
-const healing = () => {
-    if (!isHealing) return;
-    heal();
-    
-    setTimeout(healing, 0);
-}
-
-const invisibleHit = () => {
-    Dsync.mousemove = true;
-    Dsync.aimTarget = null;
-    if (
-        settings.invisHitToggle && !toggleInvis ||
-        !settings.invisHitToggle && !attackingInvis
-    ) {
-        toggleInvis = false;
-        attackingInvis = false;
-        return;
-    }
-
-    let angle = null;
-    const enemy = getNearestPossibleEnemy(+!weapon);
-    const shoot = canShoot() && !weapon;
-
-    if (enemy && (settings.meleeAim && !shoot || settings.bowAim && shoot)) {
-        angle = angleObject(futurePosition(enemy), futurePosition(Dsync.myPlayer));
-        Dsync.mousemove = false;
-        Dsync.aimTarget = enemy.target;
+                this.previousWeapon = this.weapon;
+                this.whichWeapon(pickWeapon);
+                this.equipHat(Hat.DEMOLIST, false);
+                this.attacking = true;
+                this.attack();
+                log("EQUIP");
+            },
+            () => {
+                this.PacketManager.stopAttack();
+                this.attacking = false;
+                this.whichWeapon(this.previousWeapon);
+            },
+            () => {
+                if (!Dsync.myPlayer.isClown) {
+                    this.equipHat(this.previousHat, true);
+                }
+            }
+        ], (start) => Dsync.myPlayer.target.hatReload === TargetReload.HAT && (Date.now() - start) > TargetReload.HAT)
     }
 
-    if (enemy && shoot || !shoot) {
-        whichWeapon(!weapon);
-        attack(angle);
-        Dsync.stopAttack();
-        whichWeapon(!weapon);
-    }
+    reset(items: number[]) {
+        this.move = 0;
+        this.attacking = false;
+        this.autoattack = false;
+        this.rotation = false;
+        this.weapon = false;
+        this.healing = false;
+        this.attackingInvis = false;
+        this.toggleInvis = false;
+        this.currentItem = null;
+        this.chatToggle = false;
+        this.chatCount = 0;
+        this.autobed = false;
+        this.automill = false;
+        this.automillSpawn = false;
+        this.mousemove = true;
+        this.kills = 0;
+        this.inGame = false;
+        this.itemBar = [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1];
+        this.hsl = 0;
+        this.aimTarget = null;
 
-    setTimeout(invisibleHit, 75);
-}
+        this.count = 0;
 
-const spikeInsta = () => {
+        // this.toggleJungle = false;
+        // this.toggleScuba = false;
 
-    let angle = null;
-    if (settings.spikeInstaAim) {
-        const enemy = getNearestPossibleEnemy(0);
-        if (enemy) {
-            angle = enemy.dir;
+        const target = Dsync.myPlayer.target;
+        if (target) {
+            target.hatReload = TargetReload.HAT;
+        }
+        
+        for (const id of items) {
+            this.upgradeItem(id);
+        }
+
+        for (const [key] of this.hotkeys) {
+            this.hotkeys.delete(key);
         }
     }
 
-    const oldWeapon = weapon;
-    equipHat(EHats.BERSERKER);
-    whichWeapon(false);
-    place(EItems.SPIKE, angle);
-    attack(angle);
-    Dsync.stopAttack();
-    whichWeapon(oldWeapon);
-}
-
-export let fastBreakHat = 0;
-let oldWeapon = false;
-export let fastBreaking = false;
-let startFastBreak = 0;
-const fastBreak = () => {
-    if (fastBreaking) return;
-    startFastBreak = Date.now();
-
-    const primary = itemBar(0);
-    const secondary = itemBar(1);
-    const pickWeapon = hasSecondary() && !canShoot() && (secondary === EWeapons.HAMMER || primary === EWeapons.STICK);
-
-    oldWeapon = weapon;
-    fastBreaking = true;
-    fastBreakHat = Dsync.myPlayer.hat;
-    whichWeapon(pickWeapon);
-    equipHat(EHats.DEMOLIST);
-    attacking = true;
-    attack();
-}
-
-const fastBreakStop = async () => {
-    if (!fastBreaking) return;
-
-    Dsync.stopAttack();
-    attacking = false;
-    whichWeapon(oldWeapon);
-
-    const step = Date.now() - startFastBreak;
-    if (step < TargetReload.HAT) await sleep(TargetReload.HAT - step);
-    if (!Dsync.myPlayer.isClown) equipHat(fastBreakHat);
-    
-    fastBreaking = false;
-}
-
-const handleKeydown = (event: KeyboardEvent | MouseEvent, code: string | number) => {
-    if (code === 1) event.preventDefault();
-    if (event instanceof KeyboardEvent && event.repeat) return;
-    if (Dsync.active) return;
-
-    if (code === settings.toggleMenu && !isInput(event.target as Element)) {
-        Dsync.toggleMenu();
+    private hasItem(type: number) {
+        return this.itemBar[type] !== -1;
     }
 
-    if (!inGame()) return;
-
-    if (code === settings.openChat) {
-        if (!isInput()) event.preventDefault();
-        Dsync.toggleChat();
+    private hasSecondary() {
+        return this.itemBar[ItemType.SECONDARY] !== -1;
     }
 
-    if (isInput(event.target as Element)) return;
+    updateWeapon(type: number) {
+        const weapon = Dsync.saves.defaultData[Dsync.props.itemBar][type];
+        if (this.isWeapon(weapon) && this.itemBar[type] !== weapon) {
+            this.itemBar[type] = weapon;
+        }
+    }
 
-    if (code === settings.primary) whichWeapon(false);
-    if (code === settings.secondary && hasSecondary()) whichWeapon(true);
+    canShoot() {
+        const id = this.itemBar[ItemType.SECONDARY];
+        return this.hasSecondary() && Items[id].actionType === ActionType.RANGED;
+    }
 
-    if (code === settings.heal) {
-        isHealing = true;
+    isWeapon(id: number) {
+        const type = Items[id].itemType;
+        return type === ItemType.PRIMARY || type === ItemType.SECONDARY;
+    }
+
+    isSecondary(id: number) {
+        return Items[id].itemType === ItemType.SECONDARY;
+    }
+
+    currentCount(type: number): number {
+        return Dsync.saves.defaultData[Dsync.props.currentCount][type];
+    }
+
+    hasCount(type: number) {
+        return this.currentCount(type) < this.maxCount[type];
+    }
+
+    isDoingNothing() {
+        return (
+            !this.healing &&
+            !this.attackingInvis &&
+            !this.toggleInvis &&
+            !this.attacking &&
+            this.currentItem === null
+        )
+    }
+
+    hasResources(id: number) {
+        const cost = Items[id].cost || { food: 0, wood: 0, stone: 0, gold: 0};
+        const { food, wood, stone, gold } = this.resources;
+        const hasFood = food >= cost.food;
+        const hasWood = wood >= cost.wood;
+        const hasStone = stone >= cost.stone;
+        const hasGold = gold >= cost.gold;
+        return hasFood && hasWood && hasStone && hasGold;
+    }
+
+    getAngleFromBitmask(bitmask: number, rotate: boolean) {
+        const vec = { x: 0, y: 0 };
+        if (bitmask & 0b0001) vec.y--;
+        if (bitmask & 0b0010) vec.y++;
+        if (bitmask & 0b0100) vec.x--;
+        if (bitmask & 0b1000) vec.x++;
+        if (rotate) {
+            vec.x *= -1;
+            vec.y *= -1;
+        }
+        return Math.atan2(vec.y, vec.x);
+    }
+
+    upgradeItem(id: number) {
+        const item = Items[id];
+        this.itemBar[item.itemType] = id;
+    }
+
+    upgradeScythe() {
+        const target = Dsync.saves.entityList()[ELayer.GOLDENCOW][0];
+        if (target !== undefined) {
+            this.PacketManager.upgradeScythe(target[Dsync.props.id]);
+        }
+    }
+
+    buyHat(id: number) {
+        if (!Hats[id].bought && controller.resources.gold >= Hats[id].price) {
+            Hats[id].bought = true;
+            this.PacketManager.equip(id);
+        }
+
+        return Hats[id].bought;
+    }
+
+    hatReloaded() {
+        return Dsync.myPlayer.target.hatReload === TargetReload.HAT;
+    }
+
+    equipHat(id: number, actual = true, force = false) {
+        const hatID = id === Hat.UNEQUIP ? this.actualHat : id;
+        if (!this.buyHat(hatID) || !this.inGame) return false;
+
+        const now = Date.now();
+        if (
+            !Hats[id].equipped &&
+            this.hatReloaded() &&
+            now - this.equipStart >= TargetReload.HAT || force
+        ) {
+            this.equipStart = now;
+
+            this.PacketManager.equip(hatID);
+            for (const hat of Hats) {
+                hat.equipped = false;
+            }
+
+            Hats[id].equipped = true;
+            
+            this.previousHat = this.currentHat;
+            this.currentHat = id;
+            if (actual) {
+                this.actualHat = id;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    async autochat() {
+        if (this.chatToggle) return;
+        this.chatToggle = true;
+
+        const messages = settings.autochatMessages.filter(msg => msg.length);
+        if (!messages.length) return;
+
+        this.PacketManager.chat(messages[this.chatCount++]);
+        this.chatCount %= messages.length;
+
+        await sleep(2000);
+        this.chatToggle = false;
+    }
+
+    accept(which: boolean) {
+        this.PacketManager.accept(which);
+        const acceptList: number[] = Dsync.saves.clanData[Dsync.props.acceptList];
+        acceptList.shift();
+    }
+
+    async spawn() {
+        await sleep(100);
+        const play = document.querySelector("#play") as HTMLDivElement;
+        play.click();
+    }
+
+    whichWeapon(type?: boolean) {
+        if (type !== undefined) {
+            this.weapon = type;
+        }
+
+        this.PacketManager.selectByID(this.itemBar[+this.weapon]);
+    }
+
+    attack(angle?: number) {
+        const dir = angle ? angle : Dsync.saves.getAngle();
+        this.PacketManager.attack(dir);
+    }
+
+    place(type: number, angle?: number, placementType?: number) {
+        const placeType = placementType === undefined ? settings.placementType : placementType;
+        const isHolding = placeType === PlacementType.HOLDING;
+        this.whichWeapon();
+        if (isHolding && this.attacking) this.attack(angle);
+
+        this.PacketManager.selectItemByType(type);
+        this.attack(angle);
+        this.PacketManager.stopAttack();
+
+        if (!isHolding) this.whichWeapon();
+        if (this.attacking) this.attack(angle);
+    }
+
+    placement() {
+        if (this.currentItem === null) return;
+        this.place(this.currentItem);
+        this.count = (this.count + 1) % settings.placementSpeed;
+        const method = this.count === 0 ? setTimeout : queueMicrotask;
+        method(this.placement.bind(this));
+    }
+
+    placementHandler(type: number, code: string | number) {
+        if (!this.hasItem(type)) return;
+
         if (settings.placementType === PlacementType.DEFAULT) {
-            Dsync.selectItem(EItems.HEAL);
-        } else {
-            healing();
+            this.PacketManager.selectItemByType(type);
+            return;
+        }
+
+        this.hotkeys.set(code, type);
+        this.currentItem = type;
+
+        if (this.hotkeys.size === 1) {
+            this.placement();
         }
     }
 
-    if (code === settings.wall) placementHandler(EItems.WALL, code);
-    if (code === settings.spike) placementHandler(EItems.SPIKE, code);
-    if (code === settings.windmill) placementHandler(EItems.WINDMILL, code);
-    if (code === settings.trap) placementHandler(EItems.TRAP, code);
-    if (code === settings.turret) placementHandler(EItems.TURRET, code);
-    if (code === settings.tree) placementHandler(EItems.TREE, code);
-    if (code === settings.platform) placementHandler(EItems.PLATFORM, code);
-    if (code === settings.spawn) placementHandler(EItems.SPAWN, code);
-
-    if (code === settings.unequip) equipHat(Dsync.myPlayer.hat, true);
-    if (code === settings.bush) equipHat(EHats.BUSH);
-    if (code === settings.berserker) equipHat(EHats.BERSERKER);
-    if (code === settings.jungle) equipHat(EHats.JUNGLE);
-    if (code === settings.crystal) equipHat(EHats.CRYSTAL);
-    if (code === settings.spikegear) equipHat(EHats.SPIKEGEAR);
-    if (code === settings.immunity) equipHat(EHats.IMMUNITY);
-    if (code === settings.boost) equipHat(EHats.BOOST);
-    if (code === settings.applehat) equipHat(EHats.APPLEHAT);
-    if (code === settings.scuba) equipHat(EHats.SCUBA);
-    if (code === settings.hood) equipHat(EHats.HOOD);
-    if (code === settings.demolist) equipHat(EHats.DEMOLIST); 
-
-    if (code === settings.invisibleHit && hasSecondary()) {
-        if (settings.invisHitToggle) {
-            toggleInvis = !toggleInvis;
-        } else {
-            attackingInvis = true;
-        }
-        if (toggleInvis || attackingInvis) invisibleHit();
-    }
-    if (code === settings.spikeInsta) spikeInsta();
-    if (code === settings.fastBreak) fastBreak();
-
-    // Handle movement
-    const copyMove = move;
-    if (code === settings.up) move |= 1;
-    if (code === settings.left) move |= 4;
-    if (code === settings.down) move |= 2;
-    if (code === settings.right) move |= 8;
-    if (copyMove !== move) Dsync.move(move);
-
-    // Handle mouse attack, item selection
-    if (event instanceof MouseEvent && code === 0) {
-        const canAttack = !Dsync.mousedown(event);
-        if (canAttack && Dsync.mousemove) {
-            attacking = true;
-            Dsync.attack(Dsync.getAngle());
+    heal() {
+        this.PacketManager.selectItemByType(ItemType.FOOD);
+        this.attack();
+        this.PacketManager.stopAttack();
+        this.whichWeapon();
+        if (this.attacking) {
+            this.attack();
         }
     }
 
-    if (code === settings.autoattack) {
-        autoattack = !autoattack;
-        Dsync.autoattack(autoattack);
+    invisibleHit() {
+        this.mousemove = true;
+        this.aimTarget = null;
+        if (
+            settings.invisHitToggle && !this.toggleInvis ||
+            !settings.invisHitToggle && !this.attackingInvis
+        ) {
+            this.toggleInvis = false;
+            this.attackingInvis = false;
+            return;
+        }
+
+        let angle: number = null;
+        const nearest = EntityManager.nearestPossible(!this.weapon);
+        const shoot = this.canShoot() && !this.weapon;
+
+        if (nearest && (settings.meleeAim && !shoot || settings.bowAim && shoot)) {
+            const pos1 = EntityManager.predict(Dsync.myPlayer);
+            const pos2 = EntityManager.predict(nearest);
+            angle = new Vector(pos1.x, pos1.y).angle(new Vector(pos2.x, pos2.y));
+            this.mousemove = false;
+            this.aimTarget = nearest.target;
+        }
+
+        if (nearest && shoot || !shoot) {
+            this.whichWeapon(!this.weapon);
+            this.attack(angle);
+            this.PacketManager.stopAttack();
+            this.whichWeapon(!this.weapon);
+        }
+
+        setTimeout(this.invisibleHit.bind(this), 85);
     }
 
-    if (code === settings.lockRotation) Dsync.toggleRotation();
-    if (code === settings.upgradeScythe) upgradeScythe();
-}
+    spikeInsta() {
+        let angle: number = null;
+        if (settings.spikeInstaAim) {
+            const nearest = EntityManager.nearestPossible(false);
+            if (nearest) {
+                const pos1 = new Vector(Dsync.myPlayer.x2, Dsync.myPlayer.y2);
+                const pos2 = new Vector(nearest.x2, nearest.y2);
+                angle = pos1.angle(pos2);
+            }
+        }
 
-const handleKeyup = (event: KeyboardEvent | MouseEvent, code: string | number) => {
-    if (code === settings.heal && isHealing) {
-        isHealing = false;
+        const previousWeapon = this.weapon;
+        this.equipHat(Hat.BERSERKER);
+        this.whichWeapon(false);
+        this.place(ItemType.SPIKE, angle);
+        this.attack(angle);
+        this.PacketManager.stopAttack();
+        this.whichWeapon(previousWeapon);
     }
 
-    if (code === settings.invisibleHit && attackingInvis) {
-        attackingInvis = false;
+    handleKeydown(event: KeyboardEvent | MouseEvent, code: string | number) {
+        if (code === 1) event.preventDefault();
+        if (event instanceof KeyboardEvent && event.repeat) return;
+        if (Dsync.active) return;
+
+        if (code === settings.toggleMenu && !isInput(event.target as Element)) {
+            Dsync.toggleMenu();
+        }
+
+        if (!this.inGame) return;
+
+        if (code === settings.openChat) {
+            if (!isInput()) event.preventDefault();
+            Dsync.saves.toggleChat();
+        }
+
+        if (isInput(event.target as Element)) return;
+
+        if (code === settings.primary) this.whichWeapon(false);
+        if (code === settings.secondary && this.hasSecondary()) this.whichWeapon(true);
+
+        if (code === settings.heal && !this.healing) {
+            this.healing = true;
+            if (settings.placementType === PlacementType.DEFAULT) {
+                this.PacketManager.selectItemByType(ItemType.FOOD);
+            } else {
+                doWhile(() => this.healing, this.heal.bind(this), 0);
+            }
+        }
+
+        if (code === settings.wall) this.placementHandler(ItemType.WALL, code);
+        if (code === settings.spike) this.placementHandler(ItemType.SPIKE, code);
+        if (code === settings.windmill) this.placementHandler(ItemType.WINDMILL, code);
+        if (code === settings.trap) this.placementHandler(ItemType.TRAP, code);
+        if (code === settings.turret) this.placementHandler(ItemType.TURRET, code);
+        if (code === settings.tree) this.placementHandler(ItemType.FARM, code);
+        if (code === settings.platform) this.placementHandler(ItemType.PLATFORM, code);
+        if (code === settings.spawn) this.placementHandler(ItemType.SPAWN, code);
+
+        if (code === settings.unequip) this.equipHat(Hat.UNEQUIP);
+        if (code === settings.bush) this.equipHat(Hat.BUSH);
+        if (code === settings.berserker) this.equipHat(Hat.BERSERKER);
+        if (code === settings.jungle) this.equipHat(Hat.JUNGLE);
+        if (code === settings.crystal) this.equipHat(Hat.CRYSTAL);
+        if (code === settings.spikegear) this.equipHat(Hat.SPIKEGEAR);
+        if (code === settings.immunity) this.equipHat(Hat.IMMUNITY);
+        if (code === settings.boost) this.equipHat(Hat.BOOST);
+        if (code === settings.applehat) this.equipHat(Hat.APPLEHAT);
+        if (code === settings.scuba) this.equipHat(Hat.SCUBA);
+        if (code === settings.hood) this.equipHat(Hat.HOOD);
+        if (code === settings.demolist) this.equipHat(Hat.DEMOLIST); 
+
+        if (code === settings.invisibleHit && this.hasSecondary()) {
+            if (settings.invisHitToggle) {
+                this.toggleInvis = !this.toggleInvis;
+            } else {
+                this.attackingInvis = true;
+            }
+            if (this.toggleInvis || this.attackingInvis) this.invisibleHit();
+        }
+        if (code === settings.spikeInsta) this.spikeInsta();
+        if (code === settings.fastBreak && !this.fastbreak.isActive() && this.hatReloaded()) this.fastbreak.start();
+
+        // Handle movement
+        const copyMove = this.move;
+        if (code === settings.up) this.move |= 1;
+        if (code === settings.left) this.move |= 4;
+        if (code === settings.down) this.move |= 2;
+        if (code === settings.right) this.move |= 8;
+        if (copyMove !== this.move) this.PacketManager.moveByBitmask(this.move);
+
+        if (event instanceof MouseEvent && code === 0) {
+            this.attacking = true;
+        }
+
+        if (code === settings.autoattack) {
+            this.autoattack = !this.autoattack;
+            this.PacketManager.autoattack(this.autoattack);
+        }
+
+        if (code === settings.lockRotation) {
+            this.rotation = !this.rotation;
+            Dsync.saves.toggleRotation(this.rotation);
+        }
+        if (code === settings.upgradeScythe) this.upgradeScythe();
     }
 
-    if (code === settings.fastBreak) fastBreakStop();
+    handleKeyup(event: KeyboardEvent | MouseEvent, code: string | number) {
+        if (code === settings.heal && this.healing) {
+            this.healing = false;
+        }
 
-    const copyMove = move;
-    if (code === settings.up) move &= -2;
-    if (code === settings.left) move &= -5;
-    if (code === settings.down) move &= -3;
-    if (code === settings.right) move &= -9;
-    if (copyMove !== move) Dsync.move(move);
+        if (code === settings.invisibleHit && this.attackingInvis) {
+            this.attackingInvis = false;
+        }
 
-    if (event instanceof MouseEvent && code === 0) {
-        Dsync.mouseup(event);
-        attacking = false;
-    }
+        if (code === settings.fastBreak) this.fastbreak.stop();
 
-    if (currentItem !== null && hotkeys.delete(code)) {
-        const entries = [...hotkeys];
-        currentItem = entries.length ? entries[entries.length-1][1] : null;
+        const copyMove = this.move;
+        if (code === settings.up) this.move &= -2;
+        if (code === settings.left) this.move &= -5;
+        if (code === settings.down) this.move &= -3;
+        if (code === settings.right) this.move &= -9;
+        if (copyMove !== this.move) this.PacketManager.moveByBitmask(this.move);
 
-        if (currentItem === null) {
-            currentItemID = null;
-            whichWeapon();
+        if (event instanceof MouseEvent && code === 0) {
+            this.attacking = false;
+        }
+
+        if (this.currentItem !== null && this.hotkeys.delete(code)) {
+            const entries = [...this.hotkeys];
+            this.currentItem = entries.length ? entries[entries.length-1][1] : null;
+
+            if (this.currentItem === null) {
+                this.whichWeapon();
+            }
         }
     }
-}
-
-export {
-    handleKeydown,
-    handleKeyup
 }

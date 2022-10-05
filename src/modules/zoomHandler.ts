@@ -1,32 +1,60 @@
-import { Dsync } from "..";
-import { inGame, isInput, lerp } from "../utils/Common";
+import { controller, Dsync } from "..";
+import { isInput } from "../utils/Common";
 import settings from "./Settings";
+
+export const Scale = {
+    Default: {
+        w: 1824,
+        h: 1026
+    },
+    lerp: {
+        w: 1824,
+        h: 1026
+    },
+    current: {
+        w: 1824,
+        h: 1026
+    }
+}
 
 const zoomHandler = () => {
     let wheels = 0;
     const scaleFactor = 150;
 
+    const getMinScale = () => {
+        let w = Scale.Default.w;
+        let h = Scale.Default.h;
+        while (w > scaleFactor && h > scaleFactor) {
+            w -= scaleFactor;
+            h -= scaleFactor;
+        }
+        return {
+            w,
+            h
+        }
+    }
+
     window.addEventListener("wheel", event => {
         if (
             !(event.target instanceof HTMLCanvasElement) ||
             event.ctrlKey || event.shiftKey || event.altKey ||
-            isInput() || !inGame()
+            isInput() || !controller.inGame
         ) return;
 
-        const scale = Dsync.scale
-        const { w, h, w2, h2 } = scale;
+        const { Default, current, lerp } = Scale;
         if (
-            w2 === 1824 && h2 === 1026 &&
+            current.w === Default.w && current.h === Default.h &&
             (wheels = (wheels + 1) % 5) !== 0
         ) return;
 
+        const { w, h } = getMinScale(); 
         const zoom = !settings.reverseZoom && event.deltaY > 0 || settings.reverseZoom && event.deltaY < 0 ? -scaleFactor : scaleFactor;
-        scale.w2 = Math.max(924, w2 + zoom);
-        scale.h2 = Math.max(126, h2 + zoom);
+        current.w = Math.max(w, current.w + zoom);
+        current.h = Math.max(h, current.h + zoom);
 
         if (settings.smoothZoom) return;
-        w[0] = scale.w2;
-        h[0] = scale.h2;
+        lerp.w = current.w;
+        lerp.h = current.h;
         window.dispatchEvent(new Event("resize"));
     })
 }

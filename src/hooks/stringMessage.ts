@@ -1,46 +1,73 @@
-import { Dsync, log } from "..";
-import { equipHat, place, reset, spawn } from "../modules/Controller";
+import { controller, Dsync, log } from "..";
+import { Hat } from "../constants/Hats";
+import { WebsocketServer } from "../modules/PacketManager";
 import settings from "../modules/Settings";
-import { EObjects, WebsocketString } from "../types";
+import { EObjects } from "../types";
 
-let kills = 0;
-const stringMessage = (data: [number, ...any[]]) => {
-    const [ id ] = data;
+type TData = (
+    [ WebsocketServer.LEADERBOARD, [number, number][] ] |
+    [ WebsocketServer.DAMAGE, number, number, 0 | 1 ] |
+    [ WebsocketServer.CONNECT, string ] |
+    [ WebsocketServer.UPGRADE, number[] ] |
+    [ WebsocketServer.DIED, [0, 0] ] |
+    [ WebsocketServer.KILL_UPDATE, [number, number] ] |
+    [ WebsocketServer.KILLED, string ] |
+    [ WebsocketServer.PLAYER_SPAWNED, number, string ] |
+    [
+        WebsocketServer.DEFAULT,
+        number, number, number,
+        [number, string, number][],
+        [number, number, string][],
+        boolean
+    ] | [
+        WebsocketServer.SPAWN,
+        number, string, number,
+        [0, 10, 5, 7, 14],
+        [number, number, number, number, number],
+        [0, 0],
+        0
+    ]
+)
 
-    if (id === WebsocketString.LEADERBOARD || id === WebsocketString.PLAYERSPAWNED) return;
+const stringMessage = (data: TData) => {
 
-    if (id === WebsocketString.SPAWN && settings.lastHat) {
-        equipHat(Dsync.actualHat, true);
-    }
-
-    if (id === WebsocketString.UPGRADE) {
-        const upgradeBar: number[] = data[1];
-        const item = upgradeBar[0];
-
-        const canAutobed = settings.autobed && upgradeBar.includes(EObjects.SPAWN);
-        Dsync.autobedToggle = canAutobed;
-        if (settings.skipUpgrades && upgradeBar.length === 1 || canAutobed) {
-            Dsync.upgradeItem(canAutobed ? EObjects.SPAWN : item);
+    const id = data[0];
+    if (id === WebsocketServer.SPAWN) {
+        controller.reset(data[4]);
+        controller.inGame = true;
+        controller.automillSpawn = true;
+        if (settings.lastHat) {
+            const hat = controller.toggleJungle || controller.toggleScuba ? controller.previousHat : controller.actualHat;
+            controller.equipHat(hat, true, true);
         }
     }
 
-    if (id === WebsocketString.DIED) {
-        reset();
-        kills = 0;
+    if (id === WebsocketServer.UPGRADE) {
+        const bar = data[1];
+
+        const canAutobed = settings.autobed && bar.includes(EObjects.SPAWN);
+        controller.autobed = canAutobed;
+        if (settings.skipUpgrades && bar.length === 1 || canAutobed) {
+            controller.PacketManager.upgrade(canAutobed ? EObjects.SPAWN : bar[0]);
+        }
+    }
+
+    if (id === WebsocketServer.DIED) {
+        controller.inGame = false;
         if (settings.autospawn) {
-            spawn();
+            controller.spawn();
         }
     }
 
-    if (id === WebsocketString.KILLUPDATE) {
-        kills = data[1][0];
+    if (id === WebsocketServer.KILL_UPDATE) {
+        controller.kills = data[1][0];
     }
 
-    if (id === WebsocketString.KILLED && settings.kill) {
+    if (id === WebsocketServer.KILLED && settings.kill) {
         const killMessage = settings.killMessage.length ? settings.killMessage : "{KILL}x";
         const name = data[1].replace(/^Killed\s/, "").trim();
-        const message = killMessage.replace(/\{KILL\}/g, kills+"").replace(/\{NAME\}/g, name);
-        Dsync.chat(message);
+        const message = killMessage.replace(/\{KILL\}/g, controller.kills+"").replace(/\{NAME\}/g, name);
+        controller.PacketManager.chat(message);
     }
 }
 

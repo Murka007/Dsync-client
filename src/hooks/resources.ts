@@ -1,4 +1,4 @@
-import { Dsync, log } from "..";
+import { controller, Dsync, log } from "..";
 
 const resources = (
     food: number,
@@ -6,7 +6,7 @@ const resources = (
     stone: number,
     gold: number
 ) => {
-    Dsync.resources = {
+    controller.resources = {
         food,
         wood,
         stone,

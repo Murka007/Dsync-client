@@ -1,73 +1,61 @@
-import { Dsync, log } from "..";
+import { controller, Dsync, log } from "..";
+import { ELayer } from "../constants/LayerData";
 import settings from "../modules/Settings";
-import { EItemTypes, ELayer, TargetReload, TCTX, TObjectAny } from "../types";
-import { clamp, formatEntity, formatPlayer, getAngle } from "../utils/Common";
-import { projectileCanHitEntity } from "../utils/Control";
-import Images from "../utils/Images";
-import { crosshair, drawBar, drawHealth, drawTracers, getTracerColor, marker, renderText } from "../utils/Rendering";
+import Vector from "../modules/Vector";
+import { Hit, TargetReload, TCTX, TObjectAny } from "../types";
+import { clamp, Formatter } from "../utils/Common";
+import { EntityManager } from "../utils/Control";
+import { RenderManager } from "../utils/Rendering";
 
 const drawEntityInfo = (
     target: TObjectAny,
     ctx: TCTX,
     isTeammate: boolean
 ) => {
-    const entity = formatEntity(target);
+    const entity = Formatter.entity(target);
 
-    const id = Dsync.myPlayerID();
+    const id = Dsync.saves.myPlayerID();
     if (id === entity.id) {
-        // const player = formatPlayer(target);
-        if (settings.rainbow)  {
-            Dsync.hsl = (Dsync.hsl + 0.3) % 360;
+        if (settings.rainbow) {
+            Dsync.controller.hsl = (Dsync.controller.hsl + 0.3) % 360;
         }
-        if (Dsync.aimTarget) {
-            const aimTarget = formatEntity(Dsync.aimTarget);
-            Dsync.target[Dsync.props.angle] = settings.visualAim ? getAngle(aimTarget, entity).lerpAngle : Dsync.getAngle();
+
+        if (controller.aimTarget !== null) {
+            const aim = Formatter.entity(controller.aimTarget);
+            const pos1 = new Vector(entity.x, entity.y);
+            const pos2 = new Vector(aim.x, aim.y);
+            const angle = settings.visualAim ? pos1.angle(pos2) : Dsync.saves.getAngle();
+            Dsync.myPlayer.target[Dsync.props.angle] = angle;
         }
     }
 
     let height = 0;
-    if (entity.type === 0) {
+    if (entity.type === ELayer.PLAYER) {
         if (settings.hatReloadBar && target.oldId) {
             const fillValue = clamp(target.hatReload, 0, TargetReload.HAT);
-            height += drawBar(ctx, entity, fillValue, TargetReload.HAT, settings.hatReloadBarColor, height);
+            height += RenderManager.renderBar(ctx, entity, fillValue, TargetReload.HAT, settings.hatReloadBarColor, height);
         }
 
         if (settings.weaponReloadBar) {
             const fillValue = clamp(target.weaponReload, 0, target.weaponMaxReload);
-            height += drawBar(ctx, entity, fillValue, target.weaponMaxReload, settings.weaponReloadBarColor, height);
-        }
-
-        if (settings.drawID) {
-            const front = Images.gaugeFront;
-            const w = front.width * 0.5;
-            const h = front.height * 0.5;
-
-            renderText(ctx, entity.id.toString(), () => {
-                return [
-                    entity.x + w / 2 + 5,
-                    entity.y - h + (entity.radius + 50) + 5
-                ]
-            }, {
-                font: "bold 14px Montserrat",
-                textBaseline: "top"
-            })
+            height += RenderManager.renderBar(ctx, entity, fillValue, target.weaponMaxReload, settings.weaponReloadBarColor, height);
         }
     }
 
     if (entity.type === ELayer.DRAGON && settings.fireballReloadBar) {
         const fillValue = clamp(target.fireballReload, 0, TargetReload.DRAGON);
-        height += drawBar(ctx, entity, fillValue, TargetReload.DRAGON, settings.fireballReloadBarColor);
+        height += RenderManager.renderBar(ctx, entity, fillValue, TargetReload.DRAGON, settings.fireballReloadBarColor);
     }
 
-    drawHealth(ctx, entity, height);
+    RenderManager.renderHP(ctx, entity, height);
 
-    if (id === entity.id || Dsync.myPlayer === null) return;
+    if (id === entity.id || !Dsync.myPlayer.target) return;
 
     if (settings.possibleShots && !isTeammate) {
-        const entityHit = projectileCanHitEntity(entity);
-        if (typeof entityHit === "object" && entityHit.canHit && !entityHit.needDestroy) {
-            const color = settings.rainbow ? `hsl(${Dsync.hsl}, 100%, 50%)` : getTracerColor(entity, isTeammate);
-            crosshair(ctx, entity.x, entity.y, entity.angle, color, 20, 8, 18);
+        const hit = EntityManager.projectileCanHitEntity(entity);
+        if (hit === Hit.CAN) {
+            const color = settings.rainbow ? `hsl(${controller.hsl}, 100%, 50%)` : RenderManager.tracerColor(entity, isTeammate);
+            RenderManager.circle(ctx, entity.x, entity.y, entity.radius, color);
         }
     }
 
@@ -77,7 +65,7 @@ const drawEntityInfo = (
         settings.teammateTracers && entity.type === 0 && isTeammate ||
         settings.animalTracers && entity.type !== 0
     ) {
-        drawTracers(ctx, entity, isTeammate);
+        RenderManager.renderTracer(ctx, entity, isTeammate);
     }
 }
 

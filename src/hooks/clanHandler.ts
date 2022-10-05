@@ -1,14 +1,21 @@
+import { log } from "..";
+
 export let teammates: number[] = [];
 
-const UpdateClanList = (userList: number[]) => {
+const createClan = (userList: number[]) => {
     teammates = userList;
 }
 
-const DeleteClan = () => {
+const updateClan = (userList: number[]) => {
+    teammates = userList;
+}
+
+const deleteClan = () => {
     teammates = [];
 }
 
 export {
-    UpdateClanList,
-    DeleteClan
+    createClan,
+    updateClan,
+    deleteClan
 }

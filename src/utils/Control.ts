@@ -1,262 +1,156 @@
-import { Dsync, log } from ".."
+import { controller, Dsync, log } from "..";
+import { Items, ItemType } from "../constants/Items";
+import { Animals, ELayer, LayerObjects } from "../constants/LayerData";
 import { teammates } from "../hooks/clanHandler";
-import { CannotPlaceOn, EAnimals, EItems, EItemTypes, ELayer, EWeapons, IEntity, IObject, IPlayer, LayerExclude, LayerObjects } from "../types";
-import { angle, angleObject, dist, distance, distObject, formatEntity, formatObject, formatPlayer, getAngle, sleep } from "./Common";
+import Vector from "../modules/Vector";
+import { EWeapons, Hit } from "../types";
+import { Formatter, IEntity, IPlayer, TypeEntity } from "./Common";
 
-export const itemBar = (index: number) => {
-    return Dsync.defaultData[Dsync.props.itemBar][index];
-}
-export const hasSecondary = () => {
-    const item = Dsync.itemData[itemBar(1)];
-    return item[Dsync.props.itemType] === EItems.SECONDARY;
+const getAngleDist = (a: number, b: number) => {
+    const p = Math.abs(b - a) % (Math.PI * 2);
+    return (p > Math.PI ? (Math.PI * 2) - p : p);
 }
 
-export const canShoot = () => {
-    const item = Dsync.itemData[itemBar(1)];
-    return item[Dsync.props.itemDataType] === EItemTypes.SHOOTING;
-}
+export class EntityManager {
 
-export const hasItemByType = (type: number) => {
-    const items: number[] = Dsync.defaultData[Dsync.props.itemBar];
-    return items.find(id => Dsync.itemData[id][Dsync.props.itemType] === type);
-}
-
-export const isWeapon = (id: number) => {
-    const type = Dsync.itemData[id][Dsync.props.itemType];
-    return type === 0 || type === 1;
-}
-
-export const isSecondary = (id: number) => {
-    const type = Dsync.itemData[id][Dsync.props.itemType];
-    return type === 1;
-}
-
-export const isStoneGold = () => {
-    const item = Dsync.itemData[itemBar(0)];
-    return [1, 2].includes(item[Dsync.props.weaponType]);
-}
-
-export const getCount = (type: number) => {
-    return Dsync.defaultData[Dsync.props.currentCount][type];
-}
-
-export const hasResources = (id: number) => {
-    const cost = Dsync.itemData[id][Dsync.props.resourceAmount] || [0, 0, 0, 0];
-    const { food, wood, stone, gold } = Dsync.resources;
-
-    const hasFood = food >= cost[0];
-    const hasWood = wood >= cost[1];
-    const hasStone = stone >= cost[2];
-    const hasGold = gold >= cost[3];
-    return hasFood && hasWood && hasStone && hasGold;
-}
-
-let scytheToggle = false;
-export const upgradeScythe = async () => {
-    const goldenCowID = Dsync.goldenCowID();
-    if (goldenCowID && itemBar(0) !== EWeapons.SCYTHE && !scytheToggle) {
-        scytheToggle = true;
-        Dsync.upgradeScythe(goldenCowID);
-        await sleep(200);
-        scytheToggle = false;
+    static isPlayer(entity: TypeEntity): entity is IPlayer {
+        return entity.type === ELayer.PLAYER;
     }
-}
 
-export const getAnimals = (): IEntity[] => {
-    const list = Dsync.entityList();
-    return [
-        ...list[EAnimals.COW],
-        ...list[EAnimals.SHARK],
-        ...list[EAnimals.WOLF],
-        ...list[EAnimals.GOLDENCOW],
-        ...list[EAnimals.DRAGON],
-        ...list[EAnimals.MAMMOTH],
-        ...list[EAnimals.DUCK],
-    ].map(entity => formatEntity(entity));
-}
+    static animals() {
+        const layers = Dsync.saves.entityList();
+        const animals: IEntity[] = [];
+        
+        for (let i=0;i<Animals.length;i++) {
+            const layer = layers[Animals[i].id];
+            const formatted = layer.map(target => Formatter.entity(target));
+            animals.push(...formatted);
+        }
 
-export const getEnemies = (): IEntity[] => {
-    const players = Dsync.entityList()[0];
-    return players.map(player => formatEntity(player))
-        .filter(({ id, ownerID }) => {
-            const isMyPlayer = id === Dsync.myPlayerID();
-            const isTeammate = teammates.includes(ownerID);
-            return !isMyPlayer && !isTeammate; 
+        return animals;
+    }
+
+    static enemies() {
+        const players = Dsync.saves.entityList()[ELayer.PLAYER];
+        const enemies: IPlayer[] = [];
+
+        for (let i=0;i<players.length;i++) {
+            const player = Formatter.player(players[i]);
+            const isMyPlayer = player.id === Dsync.saves.myPlayerID();
+            const isTeammate = teammates.includes(player.ownerID);
+            if (!isMyPlayer && !isTeammate) enemies.push(player);
+        }
+
+        return enemies;
+    }
+
+    static distance(a: TypeEntity, b: TypeEntity): number {
+        return new Vector(a.x2, a.y2).distance(new Vector(b.x2, b.y2));
+    }
+
+    static sortDistance(a: TypeEntity, b: TypeEntity) {
+        return this.distance(a, Dsync.myPlayer) - this.distance(b, Dsync.myPlayer);
+    }
+
+    static lookingAt(entity: TypeEntity, point: TypeEntity, angle: number) {
+        const pos1 = new Vector(entity.x2, entity.y2);
+        const pos2 = new Vector(point.x2, point.y2);
+        const dir = getAngleDist(pos1.angle(pos2) + Math.PI, entity.angle2);
+        return dir > angle;
+    }
+
+    static shield(a: IPlayer, b: IPlayer) {
+        const shieldA = this.lookingAt(a, Dsync.myPlayer, 1.58927) && a.currentItem === EWeapons.SHIELD;
+        const shieldB = this.lookingAt(b, Dsync.myPlayer, 1.58927) && b.currentItem === EWeapons.SHIELD;
+        return shieldA ? 1 : shieldB ? -1 : 0;
+    }
+
+    static entities() {
+        return [
+            ...this.enemies().sort(this.sortDistance.bind(this)).sort(this.shield.bind(this)),
+            ...this.animals().sort(this.sortDistance.bind(this))
+        ]
+    }
+
+    static predict(entity: TypeEntity) {
+        const pos1 = new Vector(entity.x1, entity.y1);
+        const pos2 = new Vector(entity.x2, entity.y2);
+
+        const distance = pos1.distance(pos2) * (entity === Dsync.myPlayer ? 1 : 2.2);
+        const direction = Vector.fromAngle(pos1.angle(pos2));
+
+        return pos2.add(direction.mult(distance));
+    }
+
+    static entityIn(entity: TypeEntity, layer: number) {
+        const targets = Dsync.saves.entityList()[layer];
+        return targets.some(target => {
+            const object = Formatter.object(target);
+            const radius = entity.radius + object.radius;
+            return this.distance(entity, object) < radius;
         })
-}
-
-export const getPlayerByOwner = (ownerID: number) => {
-    const players = Dsync.players();
-    for (const TObjectAny of players) {
-        const player = formatPlayer(TObjectAny);
-        if (player.ownerID === ownerID) return player;
-    }
-    return null;
-}
-
-export const getEntities = (): IEntity[] => {
-    return [
-        ...getEnemies(),
-        ...getAnimals()
-    ]
-}
-
-export const getPlaceOnItems = (): IObject[] => {
-    const entities = Dsync.entityList();
-    const objects: IObject[] = [];
-    for (let i=0;i<CannotPlaceOn.length;i++) {
-        const id = CannotPlaceOn[i];
-        const items = entities[id].map(object => formatObject(object));
-        objects.push(...items);
-    }
-    return objects.sort((a, b) => a.distance - b.distance);
-}
-
-export const lineSegmentIntersectsCircle = (
-    x1: number,
-    y1: number,
-    x2: number,
-    y2: number,
-    cx: number,
-    cy: number,
-    r: number
-) => {
-    const xL = x2 - x1;
-    const xC = x1 - cx;
-    const yL = y2 - y1;
-    const yC = y1 - cy;
-    const a = xL * xL + yL * yL;
-    const hB = xL * xC + yL * yC;
-    const c = xC * xC + yC * yC - r * r;
-    return (
-        hB * hB >= a * c &&
-        (-hB <= a || c + hB + hB + a <= 0) &&
-        (hB <= 0 || c <= 0)
-    )
-}
-
-export const futurePosition = (entity: IEnemy | IEntity) => {
-    const { x1, y1, x2, y2 } = entity;
-    const distance = dist(x2, y2, x1, y1) * (entity === Dsync.myPlayer ? 1 : 2.2);
-    const dir = angle(x2, y2, x1, y1);
-    return {
-        x2: x2 + distance * Math.cos(dir),
-        y2: y2 + distance * Math.sin(dir)
-    }
-}
-
-interface IEnemy extends IEntity {
-    dir: number;
-    distance: number;
-}
-
-export const getNearestEntities = (shoot: boolean): IEnemy[] => {
-    const enemies = getEnemies().map(enemy => {
-        return {
-            ...enemy,
-            dir: angleObject(enemy, Dsync.myPlayer),
-            distance: distObject(enemy, Dsync.myPlayer)
-        }
-    }).sort((a, b) => a.distance - b.distance);
-    
-    if (shoot) {
-        enemies.sort((a, b) => {
-            const hasShield1 = a.target[Dsync.props.currentItem] === EWeapons.SHIELD;
-            const hasShield2 = b.target[Dsync.props.currentItem] === EWeapons.SHIELD;
-            return hasShield1 ? 1 : hasShield2 ? -1 : 0;
-        });
     }
 
-    const animals = getAnimals().map(enemy => {
-        return {
-            ...enemy,
-            dir: angleObject(enemy, Dsync.myPlayer),
-            distance: distObject(enemy, Dsync.myPlayer)
-        }
-    }).sort((a, b) => a.distance - b.distance);
-    return [ ...enemies, ...animals ];
-}
+    static intersects(pos1: Vector, pos2: Vector, pos3: Vector, r: number) {
+        const linear = pos2.copy().sub(pos1);
+        const constant = pos1.copy().sub(pos3);
+        const a = linear.dot(linear);
+        const b = linear.dot(constant);
+        const c = constant.dot(constant) - r * r;
 
-export const entityIn = (entity: IEnemy | IEntity | IPlayer, layer: number) => {
-    return Dsync.entityList()[layer].some(target => {
-        const object = formatObject(target);
-        return distance(entity, object).dist < entity.radius + object.radius;
-    })
-}
-
-
-interface IHitData {
-    canHit: boolean;
-    needDestroy: boolean;
-}
-
-export const projectileCanHitEntity = (entity: IEntity): Readonly<IHitData> | false => {
-    if (!canShoot()) return false;
-    const range = Dsync.itemData[itemBar(EItems.SECONDARY)].range;
-    const enemy: IEnemy = {
-        ...entity,
-        dir: angleObject(entity, Dsync.myPlayer),
-        distance: distObject(entity, Dsync.myPlayer)
+        return (
+            b * b >= a * c &&
+            (-b <= a || c + b + b + a <= 0) &&
+            (b <= 0 || c <= 0)
+        )
     }
-    const x1 = Dsync.myPlayer.x2;
-    const y1 = Dsync.myPlayer.y2;
-    const x2 = x1 + range * Math.cos(enemy.dir);
-    const y2 = y1 + range * Math.sin(enemy.dir);
 
-    // if (enemy.distance > range) return false;
+    static projectileCanHitEntity(entity: TypeEntity) {
+        if (!controller.canShoot()) return Hit.CANNOT;
 
-    const myPlayerOnPlatform = entityIn(Dsync.myPlayer, ELayer.PLATFORM);
-    const entityInRoof = entityIn(entity, ELayer.ROOF);
-    if (myPlayerOnPlatform && entityInRoof) return false;
+        const pos1 = new Vector(Dsync.myPlayer.x2, Dsync.myPlayer.y2);
+        const pos2 = new Vector(entity.x2, entity.y2);
 
-    const layers = Dsync.entityList();
-    for (const layer of LayerObjects) {
-        if (myPlayerOnPlatform && !LayerExclude.includes(layer)) continue;
+        const myPlayerOnPlatform = this.entityIn(Dsync.myPlayer, ELayer.PLATFORM);
+        const entityInRoof = this.entityIn(entity, ELayer.ROOF);
+        if (myPlayerOnPlatform && entityInRoof) return Hit.CANNOT;
 
-        for (const entity of layers[layer]) {
-            const object = formatObject(entity);
-            const dist = distObject(object, Dsync.myPlayer);
-            if (dist > enemy.distance) continue;
-            if (lineSegmentIntersectsCircle(
-                x1, y1, x2, y2,
-                object.x2,
-                object.y2,
-                object.radius
-            )) {
-                const objectData = Dsync.entityData[object.type];
-                const maxHealth = objectData[Dsync.props.maxHealth];
-                if (maxHealth === undefined) return false;
-                return {
-                    canHit: true,
-                    needDestroy: true
+        const layers = Dsync.saves.entityList();
+        for (const layer of LayerObjects) {
+            if (myPlayerOnPlatform && !layer.cannotShoot) continue;
+
+            for (const target of layers[layer.id]) {
+                const object = Formatter.object(target);
+                const pos3 = new Vector(object.x2, object.y2);
+                if (pos1.distance(pos3) > pos1.distance(pos2)) continue;
+
+                if (this.intersects(pos1, pos2, pos3, object.radius)) {
+                    if (object.layerData.maxHealth === undefined) return Hit.CANNOT;
+                    return Hit.NEEDDESTROY;
                 }
             }
         }
+        return Hit.CAN;
     }
-    return {
-        canHit: true,
-        needDestroy: false
-    }
-}
 
-export const getNearestPossibleEnemy = (index: number): IEnemy => {
-    const range = Dsync.itemData[itemBar(index)].range;
-    const shoot = canShoot() && index === 1;
-    const enemies = getNearestEntities(shoot).filter(enemy => {
-        const inDistance = enemy.distance < range + enemy.radius;
+    static canHitEntity(a: TypeEntity, b: TypeEntity) {
+        const hitA = this.projectileCanHitEntity(a);
+        const hitB = this.projectileCanHitEntity(b);
+        return hitA === Hit.NEEDDESTROY ? 1 : hitB === Hit.NEEDDESTROY ? -1 : 0;
+    }
+
+    static nearestPossible(weapon: boolean): TypeEntity {
+        const range = Items[controller.itemBar[+weapon]].range || 0;
+        const shoot = controller.canShoot() && weapon;
+
+        const entities = this.entities().filter(entity => {
+            return shoot ? this.projectileCanHitEntity(entity) : this.distance(Dsync.myPlayer, entity) <= range + entity.radius;
+        })
+
         if (shoot) {
-            const entityHit = projectileCanHitEntity(enemy);
-            return inDistance && typeof entityHit === "object" && entityHit.canHit;
+            entities.sort(this.canHitEntity.bind(this));
         }
-        return inDistance;
-    });
 
-    if (shoot) {
-        enemies.sort((a, b) => {
-            const canHitA = projectileCanHitEntity(a) as Readonly<IHitData>;
-            const canHitB = projectileCanHitEntity(b) as Readonly<IHitData>;
-            return canHitA.needDestroy ? 1 : canHitB.needDestroy ? -1 : 0;
-        });
+        return entities.length ? entities[0] : null;
     }
-    return enemies.length ? enemies[0] : null;
 }

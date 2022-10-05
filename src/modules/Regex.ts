@@ -126,6 +126,7 @@ class Regex {
     replace(name: string, regex: TRegex, substr: string, flags?: string) {
         const expression = this.format(name, regex, flags);
         this.code = this.code.replace(expression, substr);
+        return this.code.match(expression);
     }
 
     append(name: string, regex: TRegex, substr: string) {
@@ -142,6 +143,7 @@ class Regex {
 
         const findExpression = new RegExp(source.replace(/^(.*)\{INSERT\}(.*)$/, "($1)($2)"));
         this.code = this.code.replace(findExpression, `$1${substr}$2`);
+        return this.code.match(findExpression);
     }
 }
 

@@ -1,6 +1,100 @@
-import { Dsync } from "..";
+import { Dsync, log } from "..";
+import { LayerData } from "../constants/LayerData";
 import settings from "../modules/Settings";
-import { IData, IEntity, ILinker, IObject, IPlayer, IProjectile, TObjectAny } from "../types";
+import { ArrElement, TObjectAny } from "../types";
+
+export interface IObject {
+    readonly id: number;
+    readonly type: number;
+    readonly x: number;
+    readonly y: number;
+    readonly x1: number;
+    readonly y1: number;
+    readonly x2: number;
+    readonly y2: number;
+    readonly angle: number;
+    readonly angle1: number;
+    readonly angle2: number;
+    readonly ownerID: number;
+    readonly radius: number;
+    readonly layerData: ArrElement<typeof LayerData>;
+    target: TObjectAny;
+}
+
+export interface IProjectile extends IObject {
+    readonly range: number;
+    readonly projectileType: number;
+}
+
+export interface IEntity extends IObject {
+    readonly healthValue: number;
+    readonly health: number;
+    readonly maxHealth: number;
+    readonly entityValue: number;
+}
+
+export interface IPlayer extends IEntity {
+    readonly hat: number;
+    readonly isClown: boolean;
+    readonly currentItem: number;
+}
+
+export type TypeEntity = IPlayer | IEntity | IObject;
+
+export class Formatter {
+    static object(target: TObjectAny): IObject {
+        const layer = LayerData[target.type];
+        return {
+            id: target[Dsync.props.id],
+            type: target.type,
+            x: target[Dsync.props.x],
+            y: target[Dsync.props.y],
+            x1: target[Dsync.props.x1],
+            y1: target[Dsync.props.y1],
+            x2: target[Dsync.props.x2],
+            y2: target[Dsync.props.y2],
+            angle: target[Dsync.props.angle],
+            angle1: target[Dsync.props.angle1],
+            angle2: target[Dsync.props.angle2],
+            ownerID: target[Dsync.props.ownerID],
+            radius: layer.radius,
+            layerData: layer,
+            target
+        }
+    }
+
+    static projectile(target: TObjectAny): IProjectile {
+        const object = this.object(target);
+        return {
+            ...object,
+            range: target.range,
+            projectileType: target[Dsync.props.projectileType]
+        }
+    }
+
+    static entity(target: TObjectAny): Readonly<IEntity> {
+        const object = this.object(target);
+        const healthValue = target[Dsync.props.health];
+        const maxHealth = object.layerData.maxHealth;
+        return {
+            ...object,
+            healthValue,
+            health: Math.ceil(healthValue / 255 * maxHealth),
+            maxHealth,
+            entityValue: target[Dsync.props.entityValue],
+        }
+    }
+
+    static player(target: TObjectAny): IPlayer {
+        const entity = this.entity(target);
+        return {
+            ...entity,
+            hat: target[Dsync.props.hat],
+            isClown: entity.entityValue === 128,
+            currentItem: target[Dsync.props.currentItem]
+        }
+    }
+}
 
 export const TYPEOF = (value: any): string => {
     return Object.prototype.toString.call(value).slice(8, -1).toLowerCase();
@@ -50,7 +144,6 @@ export const formatCode = (code: string | number): string => {
     return code.toUpperCase();
 }
 
-// Checks if target contains given className
 export const contains = (target: Element, name: string) => target.classList.contains(name);
 
 export const isInput = (target?: Element) => {
@@ -58,137 +151,10 @@ export const isInput = (target?: Element) => {
     return ["TEXTAREA", "INPUT"].includes(element.tagName);
 }
 
-export const inGame = () => {
-    const homepage = document.querySelector("#homepage") as HTMLDivElement;
-    return homepage && homepage.style.display === "none";
-}
-
-export const formatData = (object: TObjectAny): Readonly<IData> => {
-    const data = {
-        id: object[Dsync.props.id],
-        type: object.type,
-        x: object[Dsync.props.x],
-        y: object[Dsync.props.y],
-        x1: object[Dsync.props.x1],
-        y1: object[Dsync.props.y1],
-        x2: object[Dsync.props.x2],
-        y2: object[Dsync.props.y2],
-        angle: object[Dsync.props.angle],
-        angle1: object[Dsync.props.angle1],
-        angle2: object[Dsync.props.angle2],
-        ownerID: object[Dsync.props.itemOwner],
-        target: object
-    };
-
-    return {
-        ...data,
-        dir: angleObject(data, Dsync.myPlayer || { x2: 0, y2: 0 }),
-        distance: distObject(data, Dsync.myPlayer || { x2: 0, y2: 0 })
-    }
-}
-
-export const formatProjectile = (object: TObjectAny): Readonly<IProjectile> => {
-    const data = formatData(object);
-    return {
-        ...data,
-        range: object.range,
-        projectileType: object[Dsync.props.projectileType]
-    }
-}
-
-export const formatObject = (object: TObjectAny): Readonly<IObject> => {
-    const data = formatData(object);
-    const entityData = Dsync.entityData[object.type];
-    return {
-        ...data,
-        radius: entityData[Dsync.props.radius]
-    }
-}
-
-export const formatEntity = (entity: TObjectAny): Readonly<IEntity> => {
-    const object = formatObject(entity);
-    const entityData = Dsync.entityData[entity.type];
-    const healthValue = entity[Dsync.props.health];
-    const maxHealth = entityData[Dsync.props.maxHealth];
-    return {
-        ...object,
-        healthValue,
-        health: Math.ceil(entity[Dsync.props.health] / 255 * maxHealth),
-        maxHealth,
-        playerValue: entity[Dsync.props.playerValue],
-    }
-}
-
-export const formatPlayer = (entity: TObjectAny): IPlayer => {
-    const player = formatEntity(entity);
-    return {
-        ...player,
-        hat: entity[Dsync.props.hat],
-        isClown: player.playerValue === 128,
-        currentItem: entity[Dsync.props.currentItem]
-    }
-}
-
-interface IDist {
-    lerpDist: number;
-    dist: number;
-}
-
-export const dist = (x1: number, y1: number, x2: number, y2: number): number => {
-    return Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
-}
-export const distObject = (entity1: IPos, entity2: IPos) => {
-    return dist(entity1.x2, entity1.y2, entity2.x2, entity2.y2);
-}
-type EntityObject = IProjectile | IObject | IEntity | IPlayer;
-export const distance = (entity1: EntityObject, entity2: EntityObject): Readonly<IDist> => {
-    const entity1Has = "x" in entity1 && "y" in entity1;
-    const entity2Has = "x" in entity2 && "y" in entity2;
-    return {
-        lerpDist: entity1Has && entity2Has ? dist(entity1.x, entity1.y, entity2.x, entity2.y) : null,
-        dist: dist(entity1.x2, entity1.y2, entity2.x2, entity2.y2),
-    }
-}
-
-interface IAngle {
-    lerpAngle: number;
-    angle: number;
-}
-
-export const angle = (x1: number, y1: number, x2: number, y2: number) => {
-    return Math.atan2(y1 - y2, x1 - x2);
-}
-
-export interface IPos {
-    x2: number;
-    y2: number;
-}
-
-export const angleObject = (entity1: IPos, entity2: IPos) => {
-    return angle(entity1.x2, entity1.y2, entity2.x2, entity2.y2);
-}
-
-export const getAngle = (entity1: EntityObject, entity2: EntityObject): Readonly<IAngle> => {
-    const entity1Has = "x" in entity1 && "y" in entity1;
-    const entity2Has = "x" in entity2 && "y" in entity2;
-    return {
-        lerpAngle: entity1Has && entity2Has ? Math.atan2(entity1.y-entity2.y, entity1.x-entity2.x) : null,
-        angle: Math.atan2(entity1.y2-entity2.y2, entity1.x2-entity2.x2),
-    }
-}
-
 export const random = (min: number, max: number) => {
     const isInteger = Number.isInteger(min) && Number.isInteger(max);
     if (isInteger) return Math.floor(Math.random() * (max - min + 1) + min);
     return Math.random() * (max - min) + min;
-}
-
-export const toRad = (deg: number) => {
-    return deg * (Math.PI / 180);
-}
-
-export const diff = (a: number, b: number) => {
-    return Math.abs(a - b);
 }
 
 export const clamp = (value: number, min: number, max: number) => {
@@ -203,15 +169,6 @@ export const sleep = (ms: number) => {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-export const linker = (value: number): ILinker => {
-    const hook = {
-        0: value,
-        toString: (radix?: number) => hook[0].toString(radix),
-        valueOf: () => hook[0].valueOf()
-    };
-    return hook;
-}
-
 export const download = (data: TObjectAny, filename: string) => {
     const blob = new Blob([JSON.stringify(data, null, 4)], { type: "application/json "})
     const url = URL.createObjectURL(blob);
@@ -222,10 +179,6 @@ export const download = (data: TObjectAny, filename: string) => {
     a.click();
     a.remove();
     URL.revokeObjectURL(url);
-}
-
-export const capitalize = (word: string) => {
-    return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
 }
 
 export const GM = (property: string, value: string) => {
@@ -243,4 +196,19 @@ export const fromCharCode = (codes: number[]): string => {
 
 export const isBlind = () => {
     return !settings.blindUsers.every(a => a === 1);
+}
+
+export const doWhile = (
+    condition: () => boolean,
+    callback: () => void,
+    delay: number
+) => {
+    if (!condition()) return;
+    const interval = setInterval(() => {
+        if (condition()) {
+            callback();
+        } else {
+            clearInterval(interval);
+        }
+    }, delay);
 }

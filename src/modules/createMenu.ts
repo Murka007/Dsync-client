@@ -6,10 +6,9 @@ import Visuals from "../../public/menu-pages/Visuals.html";
 import Misc from "../../public/menu-pages/Misc.html";
 import Credits from "../../public/menu-pages/Credits.html";
 import CSS from "../styles/index.scss";
-import { capitalize, contains, download, formatCode, removeClass } from "../utils/Common";
+import { contains, download, formatCode, removeClass } from "../utils/Common";
 import settings, { defaultSettings, storage } from "./Settings";
-import { Dsync, log } from "..";
-import { handleKeydown, handleKeyup } from "./Controller";
+import { controller, Dsync, log } from "..";
 import { selectData } from "../types";
 
 const createMenu = () => {
@@ -207,7 +206,7 @@ const createMenu = () => {
 
                     const option = document.createElement("option");
                     option.value = data[keyValue];
-                    option.textContent = capitalize(keyValue);
+                    option.textContent = keyValue;
                     if (data[keyValue] === settings[select.id]) {
                         option.selected = true;
                         option.defaultSelected = true;
@@ -451,8 +450,8 @@ const createMenu = () => {
             Dsync.active = target as HTMLButtonElement;
         })
 
-        iframeWindow.addEventListener("keydown", event => handleKeydown(event, event.code));
-        iframeWindow.addEventListener("keyup", event => handleKeyup(event, event.code));
+        iframeWindow.addEventListener("keydown", event => controller.handleKeydown(event, event.code));
+        iframeWindow.addEventListener("keyup", event => controller.handleKeyup(event, event.code));
 
         const resize = () => {
             const width = window.innerWidth;

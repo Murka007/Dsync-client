@@ -7,6 +7,6 @@
       "moduleResolution": "node",
       "resolveJsonModule": true,
       "sourceMap": false,
-      "importHelpers": false
+      "importHelpers": false,
     }
 }
