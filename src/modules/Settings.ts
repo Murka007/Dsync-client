@@ -66,6 +66,7 @@ export const defaultSettings: Readonly<ISettings> = {
     placementSpeed: 1,
     autobed: true,
     automill: true,
+    antiFireball: true,
     
     autoheal: true,
     jungleOnClown: true,
@@ -75,6 +76,7 @@ export const defaultSettings: Readonly<ISettings> = {
     bowAim: true,
     spikeInstaAim: true,
     autosync: true,
+    autoboostFollow: true,
 
     // Visuals
     enemyTracers: true,

@@ -134,6 +134,7 @@ export interface ISettings {
     placementType: number;
     autobed: boolean;
     automill: boolean;
+    antiFireball: boolean;
 
     autoheal: boolean;
 
@@ -145,6 +146,7 @@ export interface ISettings {
     bowAim: boolean;
     spikeInstaAim: boolean;
     autosync: boolean;
+    autoboostFollow: boolean;
 
     // Visuals
     enemyTracers: boolean;

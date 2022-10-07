@@ -3,7 +3,7 @@ import { Hat, Hats } from "../constants/Hats";
 import { ActionType, Items, ItemType } from "../constants/Items";
 import { ELayer } from "../constants/LayerData";
 import { teammates } from "../hooks/clanHandler";
-import { EWeapons, PlacementType, TargetReload, TObjectAny } from "../types";
+import { EObjects, EWeapons, PlacementType, TargetReload, TObjectAny } from "../types";
 import { doWhile, Formatter, IEntity, isInput, sleep, TypeEntity } from "../utils/Common";
 import { EntityManager } from "../utils/Control";
 import PacketManager from "./PacketManager";
@@ -34,6 +34,7 @@ export default class Controller {
     readonly maxCount: Readonly<number[]>;
     hsl: number;
     aimTarget: TObjectAny;
+    private wasAutoboost: boolean;
 
     private count: number;
     private readonly hotkeys: Map<string | number, number>;
@@ -77,6 +78,7 @@ export default class Controller {
         this.itemBar = [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1];
         this.hsl = 0;
         this.aimTarget = null;
+        this.wasAutoboost = false;
 
         this.count = 0;
 
@@ -346,6 +348,13 @@ export default class Controller {
     }
 
     place(type: number, angle?: number, placementType?: number) {
+        if (this.wasAutoboost) {
+            const nearest = EntityManager.enemies()[0];
+            if (nearest !== undefined) {
+                angle = EntityManager.angle(Dsync.myPlayer, nearest);
+                this.PacketManager.moveAngle(angle);
+            }
+        }
         const placeType = placementType === undefined ? settings.placementType : placementType;
         const isHolding = placeType === PlacementType.HOLDING;
         this.whichWeapon();
@@ -377,6 +386,9 @@ export default class Controller {
 
         this.hotkeys.set(code, type);
         this.currentItem = type;
+
+        const isBoost = type === ItemType.TRAP && this.itemBar[ItemType.TRAP] === EObjects.BOOST;
+        this.wasAutoboost = settings.autoboostFollow && isBoost;
 
         if (this.hotkeys.size === 1) {
             this.placement();
@@ -412,7 +424,7 @@ export default class Controller {
         if (nearest && (settings.meleeAim && !shoot || settings.bowAim && shoot)) {
             const pos1 = EntityManager.predict(Dsync.myPlayer);
             const pos2 = EntityManager.predict(nearest);
-            angle = new Vector(pos1.x, pos1.y).angle(new Vector(pos2.x, pos2.y));
+            angle = pos1.angle(pos2);
             this.mousemove = false;
             this.aimTarget = nearest.target;
         }
@@ -432,9 +444,7 @@ export default class Controller {
         if (settings.spikeInstaAim) {
             const nearest = EntityManager.nearestPossible(this.itemBar[0]);
             if (nearest) {
-                const pos1 = new Vector(Dsync.myPlayer.x2, Dsync.myPlayer.y2);
-                const pos2 = new Vector(nearest.x2, nearest.y2);
-                angle = pos1.angle(pos2);
+                angle = EntityManager.angle(Dsync.myPlayer, nearest);
             }
         }
 
@@ -554,6 +564,11 @@ export default class Controller {
 
         if (event instanceof MouseEvent && code === 0) {
             this.attacking = false;
+        }
+
+        if (code === settings.trap && this.wasAutoboost) {
+            this.wasAutoboost = false;
+            this.PacketManager.moveByBitmask(this.move);
         }
 
         if (this.currentItem !== null && this.hotkeys.delete(code)) {

@@ -11,9 +11,10 @@ let isHealing = false;
 let start = Date.now();
 
 const getDelay = (health: number) => {
-    if (health < 74) return 60;
     if (health < 36) return 45;
-    return 130;
+    if (health < 74) return 60;
+    if (health < 90) return 130;
+    return 200;
 }
 
 const healing = () => {
@@ -124,6 +125,18 @@ const updatePlayer = (target: TObjectAny) => {
                 if (now - start > 10000 && !isInput() && isBlind()) {
                     start = now;
                     controller.PacketManager.chat(pingCount);
+                }
+
+                const hasPlatform = controller.itemBar[ItemType.PLATFORM] === EObjects.PLATFORM;
+                if (
+                    settings.antiFireball &&
+                    hasPlatform &&
+                    controller.hasCount(ItemType.PLATFORM) &&
+                    EntityManager.entityIn(Dsync.myPlayer, ELayer.FIREBALL, 23) &&
+                    !EntityManager.entityIn(Dsync.myPlayer, ELayer.PLATFORM)
+                ) {
+                    const nearest = EntityManager.nearestLayer(Dsync.myPlayer, ELayer.FIREBALL);
+                    controller.place(ItemType.PLATFORM, EntityManager.angle(nearest, Dsync.myPlayer), PlacementType.INVISIBLE);
                 }
 
             }

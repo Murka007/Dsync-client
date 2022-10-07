@@ -38,7 +38,7 @@ export class EntityManager {
             if (controller.isEnemy(player)) enemies.push(player);
         }
 
-        return enemies;
+        return enemies.sort((a, b) => this.sortDistance(a, b));
     }
 
     static distance(a: TypeEntity, b: TypeEntity): number {
@@ -92,12 +92,12 @@ export class EntityManager {
         return pos2.add(direction.mult(distance));
     }
 
-    static entityIn(entity: TypeEntity, layer: number) {
+    static entityIn(entity: TypeEntity, layer: number, extraRadius = 0) {
         const targets = Dsync.saves.entityList()[layer];
         return targets.some(target => {
             const object = Formatter.object(target);
-            const radius = entity.radius + object.radius;
-            return this.distance(entity, object) < radius;
+            const radius = entity.radius + object.radius + extraRadius;
+            return this.distance(entity, object) <= radius;
         })
     }
 
@@ -163,5 +163,10 @@ export class EntityManager {
         }
 
         return entities.length ? entities[0] : null;
+    }
+
+    static nearestLayer(entity: TypeEntity, layer: number) {
+        const objects = Dsync.saves.entityList()[layer].map(target => Formatter.object(target));
+        return objects.sort((a, b) => this.sortDistance(a, b, entity))[0];
     }
 }
