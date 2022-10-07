@@ -3,7 +3,7 @@ import { ELayer, LayerData } from "../constants/LayerData";
 import { teammates } from "../hooks/clanHandler";
 import settings from "../modules/Settings";
 import Vector from "../modules/Vector";
-import { TargetReload, TCTX, TObjectAny } from "../types";
+import { TCTX, TObjectAny, TReload } from "../types";
 import { clamp, Formatter, IEntity, IObject, lerp, TypeEntity } from "./Common";
 import { EntityManager } from "./Control";
 import Images from "./Images";
@@ -187,6 +187,13 @@ export class RenderManager {
         return front.height * scale;
     }
 
+    static reloadBar(ctx: TCTX, entity: TypeEntity, reload: TReload, height: number) {
+        const fill = clamp(reload.current, 0, reload.max);
+        reload.lerp = lerp(reload.lerp, fill, 0.2);
+        const value = settings.smoothReloadBar ? reload.lerp : fill;
+        return this.renderBar(ctx, entity, value, reload.max, reload.color(), height);
+    }
+
     static windmillRotation(target: TObjectAny) {
 
         const rotateSpeed = LayerData[target.type].rotateSpeed;
@@ -202,16 +209,8 @@ export class RenderManager {
         const object = Formatter.object(target);
         if (object.ownerID === 0) return;
 
-        const position = { ...object, x: 0, y: 0 };
-        if (
-            target.type === ELayer.TURRET &&
-            settings.turretReloadBar &&
-            target.turretReload !== undefined
-        ) {
-            const fillValue = clamp(target.turretReload, 0, TargetReload.DRAGON);
-            target.turretReloadLerp = lerp(target.turretReloadLerp || 0, fillValue, 0.15);
-            const renderValue = settings.smoothReloadBar ? target.turretReloadLerp : fillValue;
-            this.renderBar(ctx, position, renderValue, TargetReload.TURRET, settings.turretReloadBarColor);
+        if (object.type === ELayer.TURRET && settings.turretReloadBar) {
+            this.reloadBar(ctx, { ...object, x: 0, y: 0 }, target.turretReload, 0);
         }
 
         this.windmillRotation(target);
@@ -232,7 +231,7 @@ export class RenderManager {
             const w = 8;
             const distance = Math.min(100 + w * 2, pos1.distance(pos2) - w * 2);
             const angle = pos1.angle(pos2);
-            const pos = pos1.add(Vector.fromAngle(angle).mult(distance));
+            const pos = pos1.direction(angle, distance);
             this.arrow(ctx, w, pos.x, pos.y, angle, color);
         } else {
             this.lines(ctx, pos1.x, pos1.y, pos2.x, pos2.y, color);

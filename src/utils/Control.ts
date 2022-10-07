@@ -1,9 +1,7 @@
 import { controller, Dsync, log } from "..";
-import { ActionType, Items, ItemType } from "../constants/Items";
+import { ActionType, Items } from "../constants/Items";
 import { Animals, ELayer, LayerObjects } from "../constants/LayerData";
-import { teammates } from "../hooks/clanHandler";
 import Vector from "../modules/Vector";
-import { Scale } from "../modules/zoomHandler";
 import { EWeapons, Hit } from "../types";
 import { Formatter, IEntity, IPlayer, TypeEntity } from "./Common";
 
@@ -151,17 +149,6 @@ export class EntityManager {
         return this.distance(entity1, entity2) <= range + entity2.radius;
     }
 
-    static inView(entity: TypeEntity) {
-        const { w, h } = Scale.max;
-        const scale = Math.max(innerHeight / h, innerWidth / w);
-        const x = innerWidth / 2 / scale;
-        const y = innerHeight / 2 / scale;
-        const { x2, y2 } = Dsync.myPlayer;
-        const inViewX = entity.x2 > (x2 - x) && entity.x2 < (x2 + x);
-        const inViewY = entity.y2 > (y2 - y) && entity.y2 < (y2 + y);
-        return inViewX && inViewY;
-    }
-
     static nearestPossible(weapon: number, sorted?: TypeEntity): TypeEntity {
         const target = sorted || Dsync.myPlayer;
         const item = Items[weapon];
@@ -177,19 +164,4 @@ export class EntityManager {
 
         return entities.length ? entities[0] : null;
     }
-
-    // static nearestPossible(weapon: boolean): TypeEntity {
-    //     const range = Items[controller.itemBar[+weapon]].range || 0;
-    //     const shoot = controller.canShoot() && weapon;
-
-    //     const entities = this.entities().filter(entity => {
-    //         return shoot ? this.projectileCanHitEntity(entity) : this.distance(Dsync.myPlayer, entity) <= range + entity.radius;
-    //     })
-
-    //     if (shoot) {
-    //         entities.sort(this.canHitEntity.bind(this));
-    //     }
-
-    //     return entities.length ? entities[0] : null;
-    // }
 }

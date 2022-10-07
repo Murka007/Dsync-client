@@ -148,11 +148,6 @@ export default class Controller {
 
         this.count = 0;
 
-        const target = Dsync.myPlayer.target;
-        if (target) {
-            target.hatReload = TargetReload.HAT;
-        }
-        
         for (const id of items) {
             this.upgradeItem(id);
         }
@@ -279,7 +274,7 @@ export default class Controller {
     }
 
     hatReloaded() {
-        return Dsync.myPlayer.target.hatReload === TargetReload.HAT;
+        return Dsync.myPlayer.target.hatReload.current === TargetReload.HAT;
     }
 
     equipHat(id: number, actual = true, force = false) {

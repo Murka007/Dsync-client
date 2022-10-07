@@ -90,9 +90,8 @@ export const defaultSettings: Readonly<ISettings> = {
     drawHP: true,
     showHoods: true,
     itemCounter: true,
-    drawID: false,
     visualAim: true,
-    hideNicknames: false,
+    hideMessages: false,
 
     itemMarkers: true,
     teammateMarkers: true,
@@ -119,7 +118,6 @@ export const defaultSettings: Readonly<ISettings> = {
 
     windmillRotation: false,
     possibleShots: true,
-    hideMessages: false,
 
     // Misc
     autochat: true,
@@ -133,7 +131,6 @@ export const defaultSettings: Readonly<ISettings> = {
     killMessage: "{NAME}, you suck! {KILL}x",
     autospawn: false,
     smoothZoom: true,
-    autozoom: false,
     skipUpgrades: true,
     invisHitToggle: false,
     reverseZoom: false,

@@ -1,4 +1,5 @@
 import Controller from "./modules/Controller";
+import settings from "./modules/Settings";
 import { Scale } from "./modules/zoomHandler";
 import { IPlayer } from "./utils/Common";
 
@@ -160,6 +161,7 @@ export interface ISettings {
     drawHP: boolean;
     itemCounter: boolean;
     visualAim: boolean;
+    hideMessages: boolean;
 
     itemMarkers: boolean;
     teammateMarkers: boolean;
@@ -194,7 +196,6 @@ export interface ISettings {
     killMessage: string;
     autospawn: boolean;
     smoothZoom: boolean;
-    autozoom: boolean;
     skipUpgrades: boolean;
     invisHitToggle: boolean;
     reverseZoom: boolean;
@@ -267,3 +268,32 @@ export enum Hit {
     CAN,
     NEEDDESTROY
 }
+
+export const Reload = {
+    hat: {
+        current: TargetReload.HAT,
+        lerp: TargetReload.HAT,
+        max: TargetReload.HAT,
+        color: () => settings.hatReloadBarColor,
+    },
+    weapon: {
+        current: 0,
+        lerp: 0,
+        max: 0,
+        color: () => settings.weaponReloadBarColor,
+    },
+    turret: {
+        current: TargetReload.TURRET,
+        lerp: TargetReload.TURRET,
+        max: TargetReload.TURRET,
+        color: () => settings.turretReloadBarColor,
+    },
+    fireball: {
+        current: TargetReload.DRAGON,
+        lerp: TargetReload.DRAGON,
+        max: TargetReload.DRAGON,
+        color: () => settings.fireballReloadBarColor,
+    },
+}
+
+export type TReload = typeof Reload[keyof typeof Reload];

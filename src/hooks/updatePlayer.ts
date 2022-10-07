@@ -1,10 +1,9 @@
 import { controller, Dsync, log, pingCount } from "..";
 import { Hat } from "../constants/Hats";
-import { Items, ItemType } from "../constants/Items";
+import { ItemType } from "../constants/Items";
 import { ELayer } from "../constants/LayerData";
 import settings from "../modules/Settings";
-import { Scale } from "../modules/zoomHandler";
-import { EObjects, PlacementType, TargetReload, TObjectAny } from "../types";
+import { EObjects, PlacementType, TObjectAny, TReload } from "../types";
 import { Formatter, isBlind, isInput, random } from "../utils/Common";
 import { EntityManager } from "../utils/Control";
 
@@ -22,8 +21,6 @@ const healing = () => {
     if (settings.autoheal && health < maxHealth && !isClown && controller.inGame) controller.heal();
     setTimeout(healing, getDelay(health));
 }
-
-let toggleView = false;
 
 const updatePlayer = (target: TObjectAny) => {
     const entity = Formatter.entity(target);
@@ -129,76 +126,35 @@ const updatePlayer = (target: TObjectAny) => {
                     controller.PacketManager.chat(pingCount);
                 }
 
-                if (settings.autozoom) {
-                    const nearest = EntityManager.entities()[0];
-                    if (nearest) {
-                        const inView = EntityManager.inView(nearest);
-                        if (inView && !toggleView) {
-                            toggleView = true;
-                            Scale.max.w -= 300;
-                            Scale.max.h -= 300;
-                            Scale.current.w = Scale.max.w;
-                            Scale.current.h = Scale.max.h;
-                        } else if (!inView && toggleView) {
-                            toggleView = false;
-                            Scale.max.w += 300;
-                            Scale.max.h += 300;
-                            Scale.current.w = Scale.max.w;
-                            Scale.current.h = Scale.max.h;
-                        }
-                    }
-                }
             }
 
-            if (target.oldId !== player.id) {
-                target.oldId = player.id;
-                target.prevHat = player.hat;
-                target.hatReload = TargetReload.HAT;
-            }
-
+            const hatReload = target.hatReload as TReload;
             if (target.prevHat !== player.hat) {
                 target.prevHat = player.hat;
-                target.hatReload = -Dsync.step;
-                target.hatReloadLerp = 0;
+                hatReload.current = -Dsync.step;
+                hatReload.lerp = 0;
             }
-            target.hatReload = Math.min(target.hatReload + Dsync.step, TargetReload.HAT);
+            hatReload.current = Math.min(hatReload.current + Dsync.step, hatReload.max);
 
             if (settings.weaponReloadBar) {
-                if (target.weaponMaxReload === undefined && controller.isWeapon(player.currentItem)) {
-                    target.weaponMaxReload = Items[player.currentItem].reload;
-                    target.weaponReloadLerp = 0;
-                }
-
-                if (target.weaponMaxReload !== undefined) {
-                    if (target.weaponReload === undefined) {
-                        target.weaponReload = target.weaponMaxReload;
-                        target.weaponReloadLerp = 0;
-                    }
-
-                    target.weaponReload = Math.min(target.weaponReload + Dsync.step, target.weaponMaxReload);
-                }
+                const weaponReload = target.weaponReload as TReload;
+                weaponReload.current = Math.min(weaponReload.current + Dsync.step, weaponReload.max);
             }
             break;
         }
 
         case ELayer.TURRET: {
             if (settings.turretReloadBar) {
-                if (target.turretReload === undefined) {
-                    target.turretReload = TargetReload.TURRET;
-                }
-
-                target.turretReload = Math.min(target.turretReload + Dsync.step, TargetReload.TURRET);
+                const turretReload = target.turretReload as TReload;
+                turretReload.current = Math.min(turretReload.current + Dsync.step, turretReload.max);
             }
             break;
         }
 
         case ELayer.DRAGON: {
             if (settings.fireballReloadBar) {
-                if (target.fireballReload === undefined) {
-                    target.fireballReload = TargetReload.DRAGON;
-                }
-
-                target.fireballReload = Math.min(target.fireballReload + Dsync.step, TargetReload.DRAGON);
+                const fireballReload = target.fireballReload as TReload;
+                fireballReload.current = Math.min(fireballReload.current + Dsync.step, fireballReload.max);
             }
             break;
         }

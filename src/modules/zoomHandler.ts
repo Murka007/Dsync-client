@@ -14,29 +14,25 @@ export const Scale = {
     current: {
         w: 1824,
         h: 1026
-    },
-    max: {
-        w: 1824,
-        h: 1026
-    },
+    }
+}
+
+export const getMinScale = (scale: number) => {
+    let w = Scale.Default.w;
+    let h = Scale.Default.h;
+    while (w > scale && h > scale) {
+        w -= scale;
+        h -= scale;
+    }
+    return {
+        w,
+        h
+    }
 }
 
 const zoomHandler = () => {
     let wheels = 0;
     const scaleFactor = 150;
-
-    const getMinScale = () => {
-        let w = Scale.Default.w;
-        let h = Scale.Default.h;
-        while (w > scaleFactor && h > scaleFactor) {
-            w -= scaleFactor;
-            h -= scaleFactor;
-        }
-        return {
-            w,
-            h
-        }
-    }
 
     window.addEventListener("wheel", event => {
         if (
@@ -51,7 +47,7 @@ const zoomHandler = () => {
             (wheels = (wheels + 1) % 5) !== 0
         ) return;
 
-        const { w, h } = getMinScale(); 
+        const { w, h } = getMinScale(scaleFactor); 
         const zoom = !settings.reverseZoom && event.deltaY > 0 || settings.reverseZoom && event.deltaY < 0 ? -scaleFactor : scaleFactor;
         current.w = Math.max(w, current.w + zoom);
         current.h = Math.max(h, current.h + zoom);

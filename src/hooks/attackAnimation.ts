@@ -3,7 +3,7 @@ import { Items } from "../constants/Items";
 import { ELayer } from "../constants/LayerData";
 import settings from "../modules/Settings";
 import Vector from "../modules/Vector";
-import { TObjectAny } from "../types";
+import { Reload, TObjectAny, TReload } from "../types";
 import { Formatter } from "../utils/Common";
 import { EntityManager } from "../utils/Control";
 
@@ -16,10 +16,10 @@ const attackAnimation = (
 ) => {
     if (type === ELayer.PLAYER) {
         if (settings.weaponReloadBar) {
-            const reload = Items[weapon].reload || 0;
-            target.weaponMaxReload = reload;
-            target.weaponReload = -Dsync.step;
-            target.weaponReloadLerp = 0;
+            const reload = target.weaponReload as TReload;
+            reload.current = -Dsync.step;
+            reload.lerp = 0;
+            reload.max = Items[weapon].reload;
         }
 
         if (settings.autosync && controller.canAutosync()) {

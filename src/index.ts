@@ -290,13 +290,13 @@ window.eval = new Proxy(window.eval, {
             Hook.replace(
                 "chatMessage",
                 /(\.NUMBER{18},.+?)(\w+\.\w+\((\w+),\w+\))/,
-                `$1if(pingCount!==$3){$2}`
+                `$1if(pingCount!==$3&&!Dsync.settings.hideMessages){$2}`
             );
 
             Hook.replace(
                 "clanMessage",
                 /(NUMBER{1006}.+?)(\w+\.\w+\(\w+,.+?\+(\w+)\))/,
-                `$1if(pingCount!==$3){$2}`
+                `$1if(pingCount!==$3&&!Dsync.settings.hideMessages){$2}`
             )
 
             args[0] = Hook.code;

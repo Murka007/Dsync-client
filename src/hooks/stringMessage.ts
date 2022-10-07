@@ -1,5 +1,4 @@
 import { controller, Dsync, log } from "..";
-import { Hat } from "../constants/Hats";
 import { WebsocketServer } from "../modules/PacketManager";
 import settings from "../modules/Settings";
 import { EObjects } from "../types";

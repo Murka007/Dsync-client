@@ -143,7 +143,7 @@ module.exports = {
                     options: {
                         minimize: {
                             ...defaultMinimizerOptions,
-                            removeComments: true
+                            // removeComments: true
                         }
                     }
                 }
