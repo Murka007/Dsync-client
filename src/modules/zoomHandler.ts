@@ -14,7 +14,11 @@ export const Scale = {
     current: {
         w: 1824,
         h: 1026
-    }
+    },
+    max: {
+        w: 1824,
+        h: 1026
+    },
 }
 
 const zoomHandler = () => {

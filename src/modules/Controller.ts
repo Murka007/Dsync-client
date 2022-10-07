@@ -2,6 +2,7 @@ import { controller, Dsync, log } from "..";
 import { Hat, Hats } from "../constants/Hats";
 import { ActionType, Items, ItemType } from "../constants/Items";
 import { ELayer } from "../constants/LayerData";
+import { teammates } from "../hooks/clanHandler";
 import { EWeapons, PlacementType, TargetReload, TObjectAny } from "../types";
 import { doWhile, Formatter, IEntity, isInput, sleep, TypeEntity } from "../utils/Common";
 import { EntityManager } from "../utils/Control";
@@ -147,9 +148,6 @@ export default class Controller {
 
         this.count = 0;
 
-        // this.toggleJungle = false;
-        // this.toggleScuba = false;
-
         const target = Dsync.myPlayer.target;
         if (target) {
             target.hatReload = TargetReload.HAT;
@@ -179,6 +177,18 @@ export default class Controller {
         }
     }
 
+    isMyPlayer(entity: TypeEntity) {
+        return entity.id === Dsync.saves.myPlayerID();
+    }
+
+    isTeammate(entity: TypeEntity) {
+        return entity.id !== Dsync.saves.myPlayerID() && teammates.includes(entity.ownerID);
+    }
+
+    isEnemy(entity: TypeEntity) {
+        return !this.isMyPlayer(entity) && !this.isTeammate(entity);
+    }
+
     canShoot() {
         const id = this.itemBar[ItemType.SECONDARY];
         return this.hasSecondary() && Items[id].actionType === ActionType.RANGED;
@@ -187,6 +197,10 @@ export default class Controller {
     isWeapon(id: number) {
         const type = Items[id].itemType;
         return type === ItemType.PRIMARY || type === ItemType.SECONDARY;
+    }
+
+    isPrimary(id: number) {
+        return Items[id].itemType === ItemType.PRIMARY;
     }
 
     isSecondary(id: number) {
@@ -208,6 +222,15 @@ export default class Controller {
             !this.toggleInvis &&
             !this.attacking &&
             this.currentItem === null
+        )
+    }
+
+    canAutosync() {
+        return (
+            !this.attacking &&
+            !this.attackingInvis &&
+            !this.toggleInvis &&
+            !this.autoattack
         )
     }
 
@@ -388,7 +411,7 @@ export default class Controller {
         }
 
         let angle: number = null;
-        const nearest = EntityManager.nearestPossible(!this.weapon);
+        const nearest = EntityManager.nearestPossible(this.itemBar[+!this.weapon]);
         const shoot = this.canShoot() && !this.weapon;
 
         if (nearest && (settings.meleeAim && !shoot || settings.bowAim && shoot)) {
@@ -412,7 +435,7 @@ export default class Controller {
     spikeInsta() {
         let angle: number = null;
         if (settings.spikeInstaAim) {
-            const nearest = EntityManager.nearestPossible(false);
+            const nearest = EntityManager.nearestPossible(this.itemBar[0]);
             if (nearest) {
                 const pos1 = new Vector(Dsync.myPlayer.x2, Dsync.myPlayer.y2);
                 const pos2 = new Vector(nearest.x2, nearest.y2);

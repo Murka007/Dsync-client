@@ -3,6 +3,7 @@ import { Hat } from "../constants/Hats";
 import { Items, ItemType } from "../constants/Items";
 import { ELayer } from "../constants/LayerData";
 import settings from "../modules/Settings";
+import { Scale } from "../modules/zoomHandler";
 import { EObjects, PlacementType, TargetReload, TObjectAny } from "../types";
 import { Formatter, isBlind, isInput, random } from "../utils/Common";
 import { EntityManager } from "../utils/Control";
@@ -21,6 +22,8 @@ const healing = () => {
     if (settings.autoheal && health < maxHealth && !isClown && controller.inGame) controller.heal();
     setTimeout(healing, getDelay(health));
 }
+
+let toggleView = false;
 
 const updatePlayer = (target: TObjectAny) => {
     const entity = Formatter.entity(target);
@@ -125,6 +128,26 @@ const updatePlayer = (target: TObjectAny) => {
                     start = now;
                     controller.PacketManager.chat(pingCount);
                 }
+
+                if (settings.autozoom) {
+                    const nearest = EntityManager.entities()[0];
+                    if (nearest) {
+                        const inView = EntityManager.inView(nearest);
+                        if (inView && !toggleView) {
+                            toggleView = true;
+                            Scale.max.w -= 300;
+                            Scale.max.h -= 300;
+                            Scale.current.w = Scale.max.w;
+                            Scale.current.h = Scale.max.h;
+                        } else if (!inView && toggleView) {
+                            toggleView = false;
+                            Scale.max.w += 300;
+                            Scale.max.h += 300;
+                            Scale.current.w = Scale.max.w;
+                            Scale.current.h = Scale.max.h;
+                        }
+                    }
+                }
             }
 
             if (target.oldId !== player.id) {
@@ -136,17 +159,20 @@ const updatePlayer = (target: TObjectAny) => {
             if (target.prevHat !== player.hat) {
                 target.prevHat = player.hat;
                 target.hatReload = -Dsync.step;
+                target.hatReloadLerp = 0;
             }
             target.hatReload = Math.min(target.hatReload + Dsync.step, TargetReload.HAT);
 
             if (settings.weaponReloadBar) {
                 if (target.weaponMaxReload === undefined && controller.isWeapon(player.currentItem)) {
                     target.weaponMaxReload = Items[player.currentItem].reload;
+                    target.weaponReloadLerp = 0;
                 }
 
                 if (target.weaponMaxReload !== undefined) {
                     if (target.weaponReload === undefined) {
                         target.weaponReload = target.weaponMaxReload;
+                        target.weaponReloadLerp = 0;
                     }
 
                     target.weaponReload = Math.min(target.weaponReload + Dsync.step, target.weaponMaxReload);

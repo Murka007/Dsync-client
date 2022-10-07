@@ -74,6 +74,7 @@ export const defaultSettings: Readonly<ISettings> = {
     meleeAim: true,
     bowAim: true,
     spikeInstaAim: true,
+    autosync: true,
 
     // Visuals
     enemyTracers: true,
@@ -114,6 +115,7 @@ export const defaultSettings: Readonly<ISettings> = {
 
     weaponReloadBar: true,
     weaponReloadBarColor: "#cc8251",
+    smoothReloadBar: true,
 
     windmillRotation: false,
     possibleShots: true,
@@ -131,6 +133,7 @@ export const defaultSettings: Readonly<ISettings> = {
     killMessage: "{NAME}, you suck! {KILL}x",
     autospawn: false,
     smoothZoom: true,
+    autozoom: false,
     skipUpgrades: true,
     invisHitToggle: false,
     reverseZoom: false,

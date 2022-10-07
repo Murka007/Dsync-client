@@ -1,8 +1,9 @@
 import { controller, Dsync, log } from "..";
-import { Items, ItemType } from "../constants/Items";
+import { ActionType, Items, ItemType } from "../constants/Items";
 import { Animals, ELayer, LayerObjects } from "../constants/LayerData";
 import { teammates } from "../hooks/clanHandler";
 import Vector from "../modules/Vector";
+import { Scale } from "../modules/zoomHandler";
 import { EWeapons, Hit } from "../types";
 import { Formatter, IEntity, IPlayer, TypeEntity } from "./Common";
 
@@ -36,9 +37,7 @@ export class EntityManager {
 
         for (let i=0;i<players.length;i++) {
             const player = Formatter.player(players[i]);
-            const isMyPlayer = player.id === Dsync.saves.myPlayerID();
-            const isTeammate = teammates.includes(player.ownerID);
-            if (!isMyPlayer && !isTeammate) enemies.push(player);
+            if (controller.isEnemy(player)) enemies.push(player);
         }
 
         return enemies;
@@ -48,8 +47,27 @@ export class EntityManager {
         return new Vector(a.x2, a.y2).distance(new Vector(b.x2, b.y2));
     }
 
-    static sortDistance(a: TypeEntity, b: TypeEntity) {
-        return this.distance(a, Dsync.myPlayer) - this.distance(b, Dsync.myPlayer);
+    static angle(a: TypeEntity, b: TypeEntity): number {
+        return new Vector(a.x2, a.y2).angle(new Vector(b.x2, b.y2));
+    }
+
+    static sortDistance(a: TypeEntity, b: TypeEntity, sorted?: TypeEntity) {
+        const target = sorted || Dsync.myPlayer;
+        return this.distance(a, target) - this.distance(b, target);
+    }
+
+    static shield(a: IPlayer, b: IPlayer, sorted?: TypeEntity) {
+        const target = sorted || Dsync.myPlayer;
+        const shieldA = this.lookingAt(a, target, 1.58927) && a.currentItem === EWeapons.SHIELD;
+        const shieldB = this.lookingAt(b, target, 1.58927) && b.currentItem === EWeapons.SHIELD;
+        return shieldA ? 1 : shieldB ? -1 : 0;
+    }
+
+    static canHitEntity(a: TypeEntity, b: TypeEntity, sorted?: TypeEntity) {
+        const target = sorted || Dsync.myPlayer;
+        const hitA = this.projectileCanHitEntity(a, target);
+        const hitB = this.projectileCanHitEntity(b, target);
+        return hitA === Hit.NEEDDESTROY ? 1 : hitB === Hit.NEEDDESTROY ? -1 : 0;
     }
 
     static lookingAt(entity: TypeEntity, point: TypeEntity, angle: number) {
@@ -59,16 +77,10 @@ export class EntityManager {
         return dir > angle;
     }
 
-    static shield(a: IPlayer, b: IPlayer) {
-        const shieldA = this.lookingAt(a, Dsync.myPlayer, 1.58927) && a.currentItem === EWeapons.SHIELD;
-        const shieldB = this.lookingAt(b, Dsync.myPlayer, 1.58927) && b.currentItem === EWeapons.SHIELD;
-        return shieldA ? 1 : shieldB ? -1 : 0;
-    }
-
-    static entities() {
+    static entities(sorted?: TypeEntity) {
         return [
-            ...this.enemies().sort(this.sortDistance.bind(this)).sort(this.shield.bind(this)),
-            ...this.animals().sort(this.sortDistance.bind(this))
+            ...this.enemies().sort((a, b) => this.sortDistance(a, b, sorted)).sort((a, b) => this.shield(a, b, sorted)),
+            ...this.animals().sort((a, b) => this.sortDistance(a, b, sorted))
         ]
     }
 
@@ -105,13 +117,14 @@ export class EntityManager {
         )
     }
 
-    static projectileCanHitEntity(entity: TypeEntity) {
+    static projectileCanHitEntity(entity: TypeEntity, sorted?: TypeEntity) {
+        const target = sorted || Dsync.myPlayer;
         if (!controller.canShoot()) return Hit.CANNOT;
 
-        const pos1 = new Vector(Dsync.myPlayer.x2, Dsync.myPlayer.y2);
+        const pos1 = new Vector(target.x2, target.y2);
         const pos2 = new Vector(entity.x2, entity.y2);
 
-        const myPlayerOnPlatform = this.entityIn(Dsync.myPlayer, ELayer.PLATFORM);
+        const myPlayerOnPlatform = this.entityIn(target, ELayer.PLATFORM);
         const entityInRoof = this.entityIn(entity, ELayer.ROOF);
         if (myPlayerOnPlatform && entityInRoof) return Hit.CANNOT;
 
@@ -133,24 +146,50 @@ export class EntityManager {
         return Hit.CAN;
     }
 
-    static canHitEntity(a: TypeEntity, b: TypeEntity) {
-        const hitA = this.projectileCanHitEntity(a);
-        const hitB = this.projectileCanHitEntity(b);
-        return hitA === Hit.NEEDDESTROY ? 1 : hitB === Hit.NEEDDESTROY ? -1 : 0;
+    static inWeaponRange(entity1: TypeEntity, entity2: TypeEntity, weapon: number) {
+        const range = Items[weapon].range || 0;
+        return this.distance(entity1, entity2) <= range + entity2.radius;
     }
 
-    static nearestPossible(weapon: boolean): TypeEntity {
-        const range = Items[controller.itemBar[+weapon]].range || 0;
-        const shoot = controller.canShoot() && weapon;
+    static inView(entity: TypeEntity) {
+        const { w, h } = Scale.max;
+        const scale = Math.max(innerHeight / h, innerWidth / w);
+        const x = innerWidth / 2 / scale;
+        const y = innerHeight / 2 / scale;
+        const { x2, y2 } = Dsync.myPlayer;
+        const inViewX = entity.x2 > (x2 - x) && entity.x2 < (x2 + x);
+        const inViewY = entity.y2 > (y2 - y) && entity.y2 < (y2 + y);
+        return inViewX && inViewY;
+    }
+
+    static nearestPossible(weapon: number, sorted?: TypeEntity): TypeEntity {
+        const target = sorted || Dsync.myPlayer;
+        const item = Items[weapon];
+        const shoot = controller.canShoot() && item.actionType === ActionType.RANGED;
 
         const entities = this.entities().filter(entity => {
-            return shoot ? this.projectileCanHitEntity(entity) : this.distance(Dsync.myPlayer, entity) <= range + entity.radius;
+            return shoot ? this.projectileCanHitEntity(entity, target) : this.inWeaponRange(target, entity, weapon);
         })
 
         if (shoot) {
-            entities.sort(this.canHitEntity.bind(this));
+            entities.sort((a, b) => this.canHitEntity(a, b, target));
         }
 
         return entities.length ? entities[0] : null;
     }
+
+    // static nearestPossible(weapon: boolean): TypeEntity {
+    //     const range = Items[controller.itemBar[+weapon]].range || 0;
+    //     const shoot = controller.canShoot() && weapon;
+
+    //     const entities = this.entities().filter(entity => {
+    //         return shoot ? this.projectileCanHitEntity(entity) : this.distance(Dsync.myPlayer, entity) <= range + entity.radius;
+    //     })
+
+    //     if (shoot) {
+    //         entities.sort(this.canHitEntity.bind(this));
+    //     }
+
+    //     return entities.length ? entities[0] : null;
+    // }
 }

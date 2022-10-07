@@ -143,6 +143,7 @@ export interface ISettings {
     meleeAim: boolean;
     bowAim: boolean;
     spikeInstaAim: boolean;
+    autosync: boolean;
 
     // Visuals
     enemyTracers: boolean;
@@ -181,6 +182,7 @@ export interface ISettings {
 
     weaponReloadBar: boolean;
     weaponReloadBarColor: string;
+    smoothReloadBar: boolean;
 
     windmillRotation: boolean;
     possibleShots: boolean;
@@ -192,6 +194,7 @@ export interface ISettings {
     killMessage: string;
     autospawn: boolean;
     smoothZoom: boolean;
+    autozoom: boolean;
     skipUpgrades: boolean;
     invisHitToggle: boolean;
     reverseZoom: boolean;

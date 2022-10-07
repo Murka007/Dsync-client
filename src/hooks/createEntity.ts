@@ -31,6 +31,7 @@ const createEntity = (target: TObjectAny) => {
 
         if (isTurret) {
             isTurret.turretReload = -Dsync.step;
+            isTurret.turretReloadLerp = 0;
         } else if (isPlayer) {
             const weapon = Shooting.find(weapon => weapon.projectile === type);
             let reload = weapon.reload;
@@ -42,10 +43,12 @@ const createEntity = (target: TObjectAny) => {
 
             isPlayer.weaponMaxReload = reload;
             isPlayer.weaponReload = -Dsync.step;
+            isPlayer.weaponReloadLerp = 0;
         }
     } else if (type === ELayer.FIREBALL && entities[ELayer.DRAGON].length && settings.fireballReloadBar) {
         const dragon = entities[ELayer.DRAGON][0];
         dragon.fireballReload = -Dsync.step;
+        dragon.fireballReloadLerp = 0;
     }
 }
 

@@ -3,7 +3,7 @@ import { ELayer } from "../constants/LayerData";
 import settings from "../modules/Settings";
 import Vector from "../modules/Vector";
 import { Hit, TargetReload, TCTX, TObjectAny } from "../types";
-import { clamp, Formatter } from "../utils/Common";
+import { clamp, Formatter, lerp } from "../utils/Common";
 import { EntityManager } from "../utils/Control";
 import { RenderManager } from "../utils/Rendering";
 
@@ -33,18 +33,24 @@ const drawEntityInfo = (
     if (entity.type === ELayer.PLAYER) {
         if (settings.hatReloadBar && target.oldId) {
             const fillValue = clamp(target.hatReload, 0, TargetReload.HAT);
-            height += RenderManager.renderBar(ctx, entity, fillValue, TargetReload.HAT, settings.hatReloadBarColor, height);
+            target.hatReloadLerp = lerp(target.hatReloadLerp || 0, fillValue, 0.15);
+            const renderValue = settings.smoothReloadBar ? target.hatReloadLerp : fillValue;
+            height += RenderManager.renderBar(ctx, entity, renderValue, TargetReload.HAT, settings.hatReloadBarColor, height);
         }
 
         if (settings.weaponReloadBar) {
             const fillValue = clamp(target.weaponReload, 0, target.weaponMaxReload);
-            height += RenderManager.renderBar(ctx, entity, fillValue, target.weaponMaxReload, settings.weaponReloadBarColor, height);
+            target.weaponReloadLerp = lerp(target.weaponReloadLerp || 0, fillValue, 0.15);
+            const renderValue = settings.smoothReloadBar ? target.weaponReloadLerp : fillValue;
+            height += RenderManager.renderBar(ctx, entity, renderValue, target.weaponMaxReload, settings.weaponReloadBarColor, height);
         }
     }
 
     if (entity.type === ELayer.DRAGON && settings.fireballReloadBar) {
         const fillValue = clamp(target.fireballReload, 0, TargetReload.DRAGON);
-        height += RenderManager.renderBar(ctx, entity, fillValue, TargetReload.DRAGON, settings.fireballReloadBarColor);
+        target.fireballReloadLerp = lerp(target.fireballReloadLerp || 0, fillValue, 0.15);
+        const renderValue = settings.smoothReloadBar ? target.fireballReloadLerp : fillValue;
+        height += RenderManager.renderBar(ctx, entity, renderValue, TargetReload.DRAGON, settings.fireballReloadBarColor);
     }
 
     RenderManager.renderHP(ctx, entity, height);
@@ -57,6 +63,10 @@ const drawEntityInfo = (
             const color = settings.rainbow ? `hsl(${controller.hsl}, 100%, 50%)` : RenderManager.tracerColor(entity, isTeammate);
             RenderManager.circle(ctx, entity.x, entity.y, entity.radius, color);
         }
+    }
+
+    if (EntityManager.inView(entity)) {
+        RenderManager.circle(ctx, entity.x, entity.y, entity.radius, "red");
     }
 
     // Tracers handler

@@ -4,7 +4,7 @@ import { teammates } from "../hooks/clanHandler";
 import settings from "../modules/Settings";
 import Vector from "../modules/Vector";
 import { TargetReload, TCTX, TObjectAny } from "../types";
-import { Formatter, IEntity, IObject, TypeEntity } from "./Common";
+import { clamp, Formatter, IEntity, IObject, lerp, TypeEntity } from "./Common";
 import { EntityManager } from "./Control";
 import Images from "./Images";
 
@@ -208,7 +208,10 @@ export class RenderManager {
             settings.turretReloadBar &&
             target.turretReload !== undefined
         ) {
-            this.renderBar(ctx, position, target.turretReload, TargetReload.TURRET, settings.turretReloadBarColor);
+            const fillValue = clamp(target.turretReload, 0, TargetReload.DRAGON);
+            target.turretReloadLerp = lerp(target.turretReloadLerp || 0, fillValue, 0.15);
+            const renderValue = settings.smoothReloadBar ? target.turretReloadLerp : fillValue;
+            this.renderBar(ctx, position, renderValue, TargetReload.TURRET, settings.turretReloadBarColor);
         }
 
         this.windmillRotation(target);
