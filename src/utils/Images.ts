@@ -9,10 +9,6 @@ interface IImages {
 const createImage = (src: string) => {
     const img = new Image();
     img.src = src;
-    img.loaded = false;
-    img.onload = () => {
-        img.loaded = true;
-    }
     return img;
 }
 

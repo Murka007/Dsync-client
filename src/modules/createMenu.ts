@@ -6,10 +6,10 @@ import Visuals from "../../public/menu-pages/Visuals.html";
 import Misc from "../../public/menu-pages/Misc.html";
 import Credits from "../../public/menu-pages/Credits.html";
 import CSS from "../styles/index.scss";
-import { contains, download, formatCode, removeClass } from "../utils/Common";
+import { contains, download, formatCode, removeChildren, removeClass } from "../utils/Common";
 import settings, { defaultSettings, storage } from "./Settings";
 import { controller, Dsync, log } from "..";
-import { selectData } from "../types";
+import { ISettings, PlacementType, selectData } from "../types";
 
 const createMenu = () => {
 
@@ -76,7 +76,7 @@ const createMenu = () => {
     document.head.appendChild(style);
 
     IFRAME.onload = () => {
-        const iframeWindow = IFRAME.contentWindow;
+        const iframeWindow = IFRAME.contentWindow as Window;
         const iframeDocument = iframeWindow.document;
         URL.revokeObjectURL(IFRAME.src);
 
@@ -199,6 +199,7 @@ const createMenu = () => {
         const update = () => {
 
             for (const select of selects) {
+                removeChildren(select);
                 const data = selectData[select.id as keyof typeof selectData];
                 for (const key in data) {
                     if (!isNaN(Number(key))) continue;
@@ -217,6 +218,12 @@ const createMenu = () => {
                 select.onchange = () => {
                     const dataValue = /^\d+$/.test(String(select.value)) ? Number(select.value) : select.value;
                     settings[select.id] = dataValue;
+
+                    if (select.id === "placementType" && dataValue === PlacementType.DEFAULT) {
+                        settings.autoheal = false;
+                        settings.autoboostFollow = false;
+                        update();
+                    }
                     storage.set("Dsync-settings", settings);
                 }
             }
@@ -386,8 +393,8 @@ const createMenu = () => {
             parent.classList.remove("red");
             parent.classList.remove("green");
             try {
-                const text = await target.files[0].text();
-                const sets = JSON.parse(text);
+                const text = await target!.files![0].text();
+                const sets = JSON.parse(text) as ISettings;
                 if (Object.keys(sets).every(key => defaultSettings.hasOwnProperty(key))) {
                     Object.assign(settings, sets);
                     storage.set("Dsync-settings", settings);

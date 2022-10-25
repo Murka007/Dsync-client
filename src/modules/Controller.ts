@@ -4,12 +4,11 @@ import { ActionType, Items, ItemType } from "../constants/Items";
 import { ELayer } from "../constants/LayerData";
 import { teammates } from "../hooks/clanHandler";
 import { EObjects, EWeapons, PlacementType, TargetReload, TObjectAny } from "../types";
-import { doWhile, Formatter, IEntity, isInput, sleep, TypeEntity } from "../utils/Common";
+import { angle, doWhile, Formatter, IEntity, isInput, sleep, TypeEntity } from "../utils/Common";
 import { EntityManager } from "../utils/Control";
 import PacketManager from "./PacketManager";
 import settings from "./Settings";
 import { TimeoutManager } from "./TimeoutManager";
-import Vector from "./Vector";
 
 export default class Controller {
     move: number;
@@ -20,7 +19,7 @@ export default class Controller {
     private healing: boolean;
     private attackingInvis: boolean;
     private toggleInvis: boolean;
-    private currentItem: number;
+    private currentItem: number | null;
     private chatToggle: boolean;
     private chatCount: number;
     private mousemove: boolean;
@@ -33,7 +32,7 @@ export default class Controller {
     itemBar: number[];
     readonly maxCount: Readonly<number[]>;
     hsl: number;
-    aimTarget: TObjectAny;
+    aimTarget: TObjectAny | null;
     private wasAutoboost: boolean;
 
     private count: number;
@@ -45,6 +44,11 @@ export default class Controller {
         readonly stone: number;
         readonly gold: number;
     }
+    readonly mouse: {
+        x: number;
+        y: number;
+        angle: number;
+    }
 
     equipStart: number;
     actualHat: number;
@@ -53,7 +57,6 @@ export default class Controller {
     toggleJungle: boolean;
     toggleScuba: boolean;
 
-    fastbreakHat: number;
     private previousWeapon: boolean;
     readonly fastbreak: TimeoutManager;
 
@@ -91,6 +94,11 @@ export default class Controller {
             stone: 200,
             gold: 200
         }
+        this.mouse = {
+            x: 0,
+            y: 0,
+            angle: 0
+        }
 
         this.equipStart = Date.now();
         this.actualHat = 0;
@@ -101,6 +109,7 @@ export default class Controller {
         this.age = 0;
         this.hotkeys = new Map();
         this.PacketManager = new PacketManager();
+        this.previousWeapon = false;
         this.fastbreak = new TimeoutManager([
             () => {
                 const primary = this.itemBar[ItemType.PRIMARY];
@@ -123,7 +132,8 @@ export default class Controller {
                     this.equipHat(this.previousHat, true);
                 }
             }
-        ], (start) => Dsync.myPlayer.target.hatReload === TargetReload.HAT && (Date.now() - start) > TargetReload.HAT)
+        ], (start) => this.hatReloaded() && (Date.now() - start) > TargetReload.HAT)
+        this.attachMouse();
     }
 
     reset(items: number[]) {
@@ -157,6 +167,16 @@ export default class Controller {
         for (const [key] of this.hotkeys) {
             this.hotkeys.delete(key);
         }
+    }
+
+    private attachMouse() {
+        window.addEventListener("mousemove", event => {
+            this.mouse.x = event.clientX;
+            this.mouse.y = event.clientY;
+            if (!this.rotation) {
+                this.mouse.angle = angle(innerWidth / 2, innerHeight / 2, this.mouse.x, this.mouse.y);
+            }
+        })
     }
 
     private hasItem(type: number) {
@@ -343,7 +363,7 @@ export default class Controller {
     }
 
     attack(angle?: number) {
-        const dir = angle ? angle : Dsync.saves.getAngle();
+        const dir = angle ? angle : this.mouse.angle;
         this.PacketManager.attack(dir);
     }
 
@@ -417,7 +437,7 @@ export default class Controller {
             return;
         }
 
-        let angle: number = null;
+        let angle;
         const nearest = EntityManager.nearestPossible(this.itemBar[+!this.weapon]);
         const shoot = this.canShoot() && !this.weapon;
 
@@ -440,7 +460,7 @@ export default class Controller {
     }
 
     spikeInsta() {
-        let angle: number = null;
+        let angle;
         if (settings.spikeInstaAim) {
             const nearest = EntityManager.nearestPossible(this.itemBar[0]);
             if (nearest) {
@@ -463,7 +483,7 @@ export default class Controller {
         if (Dsync.active) return;
 
         if (code === settings.toggleMenu && !isInput(event.target as Element)) {
-            Dsync.toggleMenu();
+            if (typeof Dsync.toggleMenu === "function") Dsync.toggleMenu();
         }
 
         if (!this.inGame) return;
@@ -518,7 +538,9 @@ export default class Controller {
             if (this.toggleInvis || this.attackingInvis) this.invisibleHit();
         }
         if (code === settings.spikeInsta) this.spikeInsta();
-        if (code === settings.fastBreak && !this.fastbreak.isActive() && this.hatReloaded()) this.fastbreak.start();
+        if (code === settings.fastBreak && !this.fastbreak.isActive() && this.hatReloaded()) {
+            this.fastbreak.start();
+        }
 
         // Handle movement
         const copyMove = this.move;
@@ -553,7 +575,9 @@ export default class Controller {
             this.attackingInvis = false;
         }
 
-        if (code === settings.fastBreak) this.fastbreak.stop();
+        if (code === settings.fastBreak && this.fastbreak.isActive()) {
+            this.fastbreak.stop();
+        }
 
         const copyMove = this.move;
         if (code === settings.up) this.move &= -2;

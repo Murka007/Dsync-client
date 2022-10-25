@@ -3,30 +3,30 @@ import settings from "./modules/Settings";
 import { Scale } from "./modules/zoomHandler";
 import { IPlayer } from "./utils/Common";
 
-interface IProps {
-    id?: string;
-    x?: string;
-    y?: string;
-    x1?: string;
-    y1?: string;
-    x2?: string;
-    y2?: string;
-    angle?: string;
-    angle1?: string;
-    angle2?: string;
-    ownerID?: string;
+export interface IProps {
+    id: string;
+    x: string;
+    y: string;
+    x1: string;
+    y1: string;
+    x2: string;
+    y2: string;
+    angle: string;
+    angle1: string;
+    angle2: string;
+    ownerID: string;
 
-    health?: string;
-    entityValue?: string;
+    health: string;
+    entityValue: string;
 
-    hat?: string;
-    currentItem?: string;
+    hat: string;
+    currentItem: string;
 
-    acceptList?: string;
-    projectileType?: string;
-    currentCount?: string;
-    rotateSpeed?: string;
-    itemBar?: string;
+    acceptList: string;
+    projectileType: string;
+    currentCount: string;
+    rotateSpeed: string;
+    itemBar: string;
 }
 
 export type TObjectAny = { [key: string]: any };
@@ -37,24 +37,19 @@ interface IHooks {
     createEntity(target: TObjectAny): void;
     drawItemBar(ctx: TCTX, imageData: TObjectAny, index: number): void;
     renderItems(target: TObjectAny, id: number, ctx: TCTX, step: number): void;
-    resources(food: number, stone: number, wood: number, gold: number): void;
     attackAnimation(type: number, id: number, weapon: number, isObject: number, entity: TObjectAny): void;
-    createClan(userList: number[]): void;
-    updateClan(userList: number[]): void;
-    deleteClan(): void;
-    moveUpdate(): void;
-    renderLoop(): void;
 }
 
 export interface ISaves {
-    getAngle(): number;
     send(bytes: Uint8Array): void;
-    myPlayerID?(): number;
-    clanData?: TObjectAny;
-    defaultData?: TObjectAny;
-    entityList?(): TObjectAny[][];
-    toggleChat?(): void;
-    toggleRotation?(value: boolean): void;
+    myPlayerID(): number;
+    readonly clanData: TObjectAny;
+    readonly defaultData: TObjectAny;
+    entityList(): TObjectAny[][];
+    toggleChat(): void;
+    toggleRotation(value: boolean): void;
+    readonly buffer: Uint8Array;
+    byteLength(): number;
 }
 
 declare global {
@@ -62,25 +57,21 @@ declare global {
         log: typeof console.log;
         COPY_CODE: string;
         Dsync: {
-            props: IProps;
-            hooks: IHooks;
-            saves: Readonly<ISaves>;
-            controller: Controller;
-            scale: typeof Scale,
-            settings: ISettings;
+            readonly props: IProps;
+            readonly hooks: Readonly<IHooks>;
+            readonly saves: Readonly<ISaves>;
+            readonly controller: Controller;
+            readonly scale: typeof Scale,
+            readonly settings: ISettings;
             myPlayer: IPlayer;
-            version: string;
+            readonly version: string;
             step: number;
 
             toggleMenu?(): void;
-            active?: HTMLButtonElement;
-            PRODUCTION: boolean;
+            active: HTMLButtonElement | null;
+            readonly PRODUCTION: boolean;
             connectURL: string;
         }
-    }
-
-    interface HTMLImageElement {
-        loaded: boolean;
     }
 }
 

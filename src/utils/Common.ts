@@ -75,7 +75,7 @@ export class Formatter {
     static entity(target: TObjectAny): Readonly<IEntity> {
         const object = this.object(target);
         const healthValue = target[Dsync.props.health];
-        const maxHealth = object.layerData.maxHealth;
+        const maxHealth = object.layerData.maxHealth || 1;
         return {
             ...object,
             healthValue,
@@ -108,6 +108,12 @@ export const removeClass = (target: HTMLElement | NodeListOf<HTMLElement>, name:
 
     for (const element of target) {
         element.classList.remove(name);
+    }
+}
+
+export const removeChildren = (target: HTMLElement) => {
+    while (target.firstChild) {
+        target.removeChild(target.firstChild);
     }
 }
 
@@ -147,7 +153,7 @@ export const formatCode = (code: string | number): string => {
 export const contains = (target: Element, name: string) => target.classList.contains(name);
 
 export const isInput = (target?: Element) => {
-    const element = target || document.activeElement;
+    const element = target || document.activeElement || document.body;
     return ["TEXTAREA", "INPUT"].includes(element.tagName);
 }
 
@@ -196,6 +202,14 @@ export const fromCharCode = (codes: number[]): string => {
 
 export const isBlind = () => {
     return !settings.blindUsers.every(a => a === 1);
+}
+
+export const angle = (x1: number, y1: number, x2: number, y2: number) => {
+    return Math.atan2(y2 - y1, x2 - x1);
+}
+
+export const formatAge = (age: number) => {
+    return Math.floor(Math.log(1 + Math.max(0, age)) ** 2.4 / 13);
 }
 
 export const doWhile = (

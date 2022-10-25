@@ -1,14 +1,22 @@
 import { controller, Dsync, log } from "..";
 import { Hats } from "../constants/Hats";
+import { createClan, deleteClan, updateClan } from "../hooks/clanHandler";
+import moveUpdate from "../hooks/moveUpdate";
+import playerStats from "../hooks/playerStats";
 import stringMessage from "../hooks/stringMessage";
 
 export enum WebsocketServer {
     LEADERBOARD = 3,
     DAMAGE = 6,
+    PLAYERSTATS = 8,
     CONNECT = 12,
     UPGRADE = 14,
+    UPDATECLAN = 16,
     DIED = 19,
+    MOVEUPDATE = 20,
     KILL_UPDATE = 22,
+    JOINCREATECLAN = 24,
+    DELETECLAN = 27,
     KILLED = 28,
     PLAYER_SPAWNED = 32,
     DEFAULT = 33,
@@ -53,8 +61,26 @@ window.WebSocket = new Proxy(window.WebSocket, {
             const data = event.data;
             if (typeof data === "string" && /^\[.+\]$/.test(data)) {
                 stringMessage(JSON.parse(data));
+            } else {
+                switch (Dsync.saves.buffer[0]) {
+                    case WebsocketServer.PLAYERSTATS:
+                        playerStats();
+                        break;
+                    case WebsocketServer.DELETECLAN:
+                        deleteClan();
+                        break;
+                    case WebsocketServer.JOINCREATECLAN:
+                        createClan();
+                        break;
+                    case WebsocketServer.UPDATECLAN:
+                        updateClan();
+                        break;
+                    case WebsocketServer.MOVEUPDATE:
+                        moveUpdate();
+                        break;
+                }
             }
-        })
+        });
         return ws;
     }
 });
@@ -69,7 +95,7 @@ export default class PacketManager {
     private send(...args: readonly any[]) {
         Dsync.saves.send(new Uint8Array(args));
     }
-    
+
     moveByBitmask(bitmask: number) {
         this.send(WebsocketClient.MOVE, bitmask);
     }

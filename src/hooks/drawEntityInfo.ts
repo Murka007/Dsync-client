@@ -6,7 +6,6 @@ import { Formatter } from "../utils/Common";
 import { EntityManager } from "../utils/Control";
 import { RenderManager } from "../utils/Rendering";
 
-let toggleView = false;
 const drawEntityInfo = (
     target: TObjectAny,
     ctx: TCTX,
@@ -22,7 +21,7 @@ const drawEntityInfo = (
 
         if (controller.aimTarget !== null) {
             const aim = Formatter.entity(controller.aimTarget);
-            const angle = settings.visualAim ? EntityManager.angle(entity, aim) : Dsync.saves.getAngle();
+            const angle = settings.visualAim ? EntityManager.angle(entity, aim) : controller.mouse.angle;
             Dsync.myPlayer.target[Dsync.props.angle] = angle;
         }
     }

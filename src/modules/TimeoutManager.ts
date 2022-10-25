@@ -1,3 +1,4 @@
+import { log } from "..";
 
 type TCallback = [() => any, () => any, () => any];
 export class TimeoutManager {
@@ -20,11 +21,15 @@ export class TimeoutManager {
         return new Promise<void>(resolve => {
             const start = Date.now();
             const int = setInterval(() => {
-                if (Number.isFinite(time) && Date.now()-start>time || condition()) {
+                if (
+                    typeof time === "number" &&
+                    Number.isFinite(time) &&
+                    Date.now()-start>time || condition()
+                ) {
                     clearInterval(int);
                 }
                 if (condition()) {
-                    if (typeof callback === "function") return callback;
+                    if (typeof callback === "function") return callback();
                     resolve();
                 }
             }, 50);
@@ -40,7 +45,6 @@ export class TimeoutManager {
 
     async stop() {
         if (!this.active) return;
-
         this.callbacks[1]();
         if (!this.delay(this.old)) await TimeoutManager.waitUntil(() => this.delay(this.old), 3000);
         this.callbacks[2]();

@@ -85,7 +85,7 @@ export class RenderManager {
     }
 
     static markerColor(target: TObjectAny, ownerID: number) {
-        let color: string = null;
+        let color: string | null = null;
 
         const object = Formatter.object(target);
         const isMyPlayer = Dsync.myPlayer.ownerID === ownerID;
@@ -128,7 +128,7 @@ export class RenderManager {
         Object.assign(ctx, TextOptions, options);
 
         const width = ctx.measureText(text).width;
-        const height = parseInt(ctx.font.match(/\d+/)[0]) || 1;
+        const height = parseInt((ctx.font.match(/\d+/) || [])[0]) || 1;
         const data = callback(width, height);
 
         ctx.strokeText(text, ...data);

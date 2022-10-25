@@ -2,8 +2,7 @@ import { controller, Dsync, log } from "..";
 import { Items } from "../constants/Items";
 import { ELayer } from "../constants/LayerData";
 import settings from "../modules/Settings";
-import Vector from "../modules/Vector";
-import { Reload, TObjectAny, TReload } from "../types";
+import { TObjectAny, TReload } from "../types";
 import { Formatter } from "../utils/Common";
 import { EntityManager } from "../utils/Control";
 
@@ -19,7 +18,7 @@ const attackAnimation = (
             const reload = target.weaponReload as TReload;
             reload.current = -Dsync.step;
             reload.lerp = 0;
-            reload.max = Items[weapon].reload;
+            reload.max = Items[weapon].reload || 0;
         }
 
         if (settings.autosync && controller.canAutosync()) {
@@ -32,7 +31,7 @@ const attackAnimation = (
                     controller.attack(EntityManager.angle(Dsync.myPlayer, nearest));
                     controller.PacketManager.stopAttack();
                     controller.whichWeapon(previousWeapon);
-                    controller.PacketManager.changeAngle(Dsync.saves.getAngle());
+                    controller.PacketManager.changeAngle(controller.mouse.angle);
                 }
             }
         }

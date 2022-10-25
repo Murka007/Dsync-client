@@ -149,7 +149,7 @@ export class EntityManager {
         return this.distance(entity1, entity2) <= range + entity2.radius;
     }
 
-    static nearestPossible(weapon: number, sorted?: TypeEntity): TypeEntity {
+    static nearestPossible(weapon: number, sorted?: TypeEntity): TypeEntity | null {
         const target = sorted || Dsync.myPlayer;
         const item = Items[weapon];
         const shoot = controller.canShoot() && item.actionType === ActionType.RANGED;

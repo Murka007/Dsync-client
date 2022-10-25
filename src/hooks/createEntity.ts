@@ -21,7 +21,7 @@ const createEntity = (target: TObjectAny) => {
         
         const weaponReload = target.weaponReload as TReload;
         if (controller.isWeapon(player.currentItem)) {
-            weaponReload.max = Items[player.currentItem].reload;
+            weaponReload.max = Items[player.currentItem].reload || 0;
             weaponReload.current = weaponReload.max;
             weaponReload.lerp = weaponReload.max;
         }
@@ -54,11 +54,12 @@ const createEntity = (target: TObjectAny) => {
             reload.lerp = 0;
         } else if (isPlayer) {
             const weapon = Shooting.find(weapon => weapon.projectile === type);
-            let delay = weapon.reload;
+            if (weapon === undefined) return;
+            let delay = weapon.reload || 0;
 
             if (type === 88) {
                 const id = isPlayer.secondary === EWeapons.XBOW ? EWeapons.XBOW : EWeapons.BOW;
-                delay = Items[id].reload;
+                delay = Items[id].reload || 0;
             }
 
             const reload = isPlayer.weaponReload as TReload;

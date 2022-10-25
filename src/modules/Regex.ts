@@ -31,12 +31,14 @@ class Regex {
     readonly COPY_CODE: string;
     private readonly unicode: boolean;
     private readonly hooks: { [key: string]: THook };
+    totalHooks: number;
 
     constructor(code: string, unicode: boolean) {
         this.code = code;
         this.COPY_CODE = code;
         this.unicode = unicode || false;
         this.hooks = {};
+        this.totalHooks = 0;
     }
 
     static parseValue(value: any): any {
@@ -73,8 +75,9 @@ class Regex {
     }
 
     private format(name: string, inputRegex: TRegex, flags?: string): RegExp {
+        this.totalHooks += 1;
 
-        let regex: string = null;
+        let regex: string = "";
         if (Array.isArray(inputRegex)) {
             regex = inputRegex.map(exp => this.isRegexp(exp) ? (exp as RegExp).source : exp).join("\\s*");
         } else if (this.isRegexp(inputRegex)) {
@@ -126,7 +129,7 @@ class Regex {
     replace(name: string, regex: TRegex, substr: string, flags?: string) {
         const expression = this.format(name, regex, flags);
         this.code = this.code.replace(expression, substr);
-        return this.code.match(expression);
+        return this.code.match(expression) || [];
     }
 
     append(name: string, regex: TRegex, substr: string) {
