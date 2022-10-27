@@ -7,8 +7,6 @@ import { Formatter } from "../utils/Common";
 import { EntityManager } from "../utils/Control";
 
 const attackAnimation = () => {
-    if (!(settings.weaponReloadBar && settings.autosync)) return;
-
     const b = Dsync.saves.buffer;
     const len = Dsync.saves.byteLength();
     const players = Dsync.saves.players();
