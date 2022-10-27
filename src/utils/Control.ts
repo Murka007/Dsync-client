@@ -1,8 +1,8 @@
 import { controller, Dsync, log } from "..";
-import { ActionType, Items } from "../constants/Items";
+import { ActionType, EWeapons, Items } from "../constants/Items";
 import { Animals, ELayer, LayerObjects } from "../constants/LayerData";
 import Vector from "../modules/Vector";
-import { EWeapons, Hit } from "../types";
+import { Hit } from "../types";
 import { Formatter, IEntity, IPlayer, TypeEntity } from "./Common";
 
 const getAngleDist = (a: number, b: number) => {

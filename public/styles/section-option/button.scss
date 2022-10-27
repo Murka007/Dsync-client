@@ -7,6 +7,11 @@
         font-weight: 900;
         cursor: pointer;
 
+        &[data-type] {
+            width: 135px;
+            font-size: 0.45em;
+        }
+
         height: 40px;
         padding-bottom: 6px;
         border-radius: $roundness * 1.5;

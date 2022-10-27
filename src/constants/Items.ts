@@ -1,4 +1,24 @@
 import { ArrElement } from "../types"
+import { ELayer } from "./LayerData";
+
+export enum EWeapons {
+    TOOL_HAMMER = 0,
+    STONE_SWORD = 1,
+    STONE_SPEAR = 2,
+    STONE_AXE = 3,
+    MUSKET = 4,
+    SHIELD = 11,
+    STICK = 13,
+    HAMMER = 15,
+    KATANA = 17,
+    BOW = 26,
+    XBOW = 27,
+    NAGINATA = 28,
+    GREAT_AXE = 30,
+    BAT = 31,
+    PEARL = 50,
+    SCYTHE = 57
+}
 
 export enum ActionType {
     MELEE,
@@ -29,7 +49,7 @@ export enum upgradeType {
 }
 
 const ItemData = [{
-    id: 0,
+    id: EWeapons.TOOL_HAMMER,
     "gs": 46,
     upgradeType: upgradeType.STONE,
     imageinv: 29,
@@ -47,7 +67,7 @@ const ItemData = [{
     "As": -3.5,
     "os": 1
 }, {
-    id: 1,
+    id: EWeapons.STONE_SWORD,
     "ks": 1,
     "ys": 2,
     imageinv: 28,
@@ -65,7 +85,7 @@ const ItemData = [{
     "As": -8,
     "os": -4
 }, {
-    id: 2,
+    id: EWeapons.STONE_SPEAR,
     "gs": 39,
     upgradeType: upgradeType.STONE,
     "ks": 1,
@@ -85,7 +105,7 @@ const ItemData = [{
     "As": 0,
     "os": 2
 }, {
-    id: 3,
+    id: EWeapons.STONE_AXE,
     "gs": 33,
     upgradeType: upgradeType.STONE,
     "ks": 1,
@@ -108,7 +128,7 @@ const ItemData = [{
     "Bs": 2,
     "zs": 2
 }, {
-    id: 4,
+    id: EWeapons.MUSKET,
     cost: {
         food: 0,
         wood: 0,
@@ -150,7 +170,7 @@ const ItemData = [{
     "Hs": 5,
     "As": 0,
     "os": 15,
-    "Ss": 8,
+    layer: ELayer.WOODWALL,
     "ps": 2
 }, {
     id: 6,
@@ -171,7 +191,7 @@ const ItemData = [{
     "Hs": -5,
     "As": 0,
     "os": 3,
-    "Ss": 10,
+    layer: ELayer.BOOST,
     "ps": 2
 }, {
     id: 7,
@@ -190,7 +210,7 @@ const ItemData = [{
     "Hs": 2,
     "As": 0,
     "os": 15,
-    "Ss": 7,
+    layer: ELayer.SPIKE,
     "ps": 2
 }, {
     id: 8,
@@ -210,7 +230,7 @@ const ItemData = [{
     "Hs": -2,
     "As": 0,
     "os": 8,
-    "Ss": 9,
+    layer: ELayer.PLATFORM,
     "ps": 2
 }, {
     id: 9,
@@ -231,7 +251,7 @@ const ItemData = [{
     "Hs": 2,
     "As": 0,
     "os": 26,
-    "Ss": 6,
+    layer: ELayer.TRAP,
     "ps": 2
 }, {
     id: 10,
@@ -252,7 +272,7 @@ const ItemData = [{
     "os": 22,
     "ps": 2
 }, {
-    id: 11,
+    id: EWeapons.SHIELD,
     "ks": 1,
     "ys": 256,
     imageinv: 47,
@@ -292,7 +312,7 @@ const ItemData = [{
     "os": 22,
     "ps": 2
 }, {
-    id: 13,
+    id: EWeapons.STICK,
     "gs": 41,
     upgradeType: upgradeType.STONE,
     "ks": 1,
@@ -332,10 +352,10 @@ const ItemData = [{
     "Hs": -5,
     "As": 0,
     "os": 38,
-    "Ss": 13,
+    layer: ELayer.WINDMILL,
     "ps": 2
 }, {
-    id: 15,
+    id: EWeapons.HAMMER,
     "ks": 1,
     "ys": 1,
     imageinv: 63,
@@ -372,10 +392,10 @@ const ItemData = [{
     "Hs": 8,
     "As": 0,
     "os": 25,
-    "Ss": 15,
+    layer: ELayer.SPAWN,
     "ps": 2
 }, {
-    id: 17,
+    id: EWeapons.KATANA,
     "gs": 37,
     upgradeType: upgradeType.STONE,
     "ks": 2,
@@ -417,7 +437,7 @@ const ItemData = [{
     "Hs": -8,
     "As": 0,
     "os": 14,
-    "Ss": 17,
+    layer: ELayer.CASTLESPIKE,
     "ps": 2
 }, {
     id: 19,
@@ -439,7 +459,7 @@ const ItemData = [{
     "Hs": 5,
     "As": 0,
     "os": 38,
-    "Ss": 16,
+    layer: ELayer.POWERMILL,
     "ps": 2
 }, {
     id: 20,
@@ -460,7 +480,7 @@ const ItemData = [{
     "Hs": 2,
     "As": 0,
     "os": 15,
-    "Ss": 2,
+    layer: ELayer.HARDSPIKE,
     "ps": 2
 }, {
     id: 21,
@@ -481,7 +501,7 @@ const ItemData = [{
     "Hs": 6,
     "As": 0,
     "os": 25,
-    "Ss": 18,
+    layer: ELayer.TURRET,
     "ps": 2
 }, {
     id: 22,
@@ -502,7 +522,7 @@ const ItemData = [{
     "Hs": 3,
     "As": 0,
     "os": 47,
-    "Ss": 20,
+    layer: ELayer.CHERRYWOODFARM,
     "ps": 2
 }, {
     id: 23,
@@ -523,7 +543,7 @@ const ItemData = [{
     "Hs": 3,
     "As": 0,
     "os": 47,
-    "Ss": 19,
+    layer: ELayer.WOODFARM,
     "ps": 2
 }, {
     id: 24,
@@ -544,7 +564,7 @@ const ItemData = [{
     "Hs": 3,
     "As": 0,
     "os": 17,
-    "Ss": 5,
+    layer: ELayer.BUSH,
     "ps": 2
 }, {
     id: 25,
@@ -565,10 +585,10 @@ const ItemData = [{
     "Hs": 3,
     "As": 0,
     "os": 20,
-    "Ss": 21,
+    layer: ELayer.STONEWARM,
     "ps": 2
 }, {
-    id: 26,
+    id: EWeapons.BOW,
     cost: {
         food: 0,
         wood: 4,
@@ -593,7 +613,7 @@ const ItemData = [{
     "As": 0,
     "os": 35
 }, {
-    id: 27,
+    id: EWeapons.XBOW,
     cost: {
         food: 0,
         wood: 10,
@@ -618,7 +638,7 @@ const ItemData = [{
     "As": 0,
     "os": 30
 }, {
-    id: 28,
+    id: EWeapons.NAGINATA,
     "gs": 45,
     upgradeType: upgradeType.STONE,
     "ks": 4,
@@ -656,10 +676,10 @@ const ItemData = [{
     "Hs": 8,
     "As": 0,
     "os": 13,
-    "Ss": 22,
+    layer: ELayer.CASTLEWALL,
     "ps": 2
 }, {
-    id: 30,
+    id: EWeapons.GREAT_AXE,
     "gs": 35,
     upgradeType: upgradeType.STONE,
     "ks": 128,
@@ -682,7 +702,7 @@ const ItemData = [{
     "Bs": 4,
     "zs": 2
 }, {
-    id: 31,
+    id: EWeapons.BAT,
     "ks": 1,
     "ys": 2048,
     imageinv: 128,
@@ -1060,7 +1080,7 @@ const ItemData = [{
     "Hs": 0,
     "As": 0,
     "os": 15,
-    "Ss": 26,
+    layer: ELayer.ROOF,
     "ps": 2
 }, {
     id: 50,
@@ -1106,7 +1126,7 @@ const ItemData = [{
     "Hs": 5,
     "As": 0,
     "os": 15,
-    "Ss": 37,
+    layer: ELayer.TELEPORT,
     "ps": 2
 }, {
     "gs": 53,

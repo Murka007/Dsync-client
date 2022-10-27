@@ -1,12 +1,11 @@
 import createMenu from "./modules/createMenu";
-import settings, { storage } from "./modules/Settings";
+import settings, { Storage } from "./modules/Settings";
 import { fromCharCode, GM, IPlayer, isInput } from "./utils/Common";
 const version = require("../package.json").version;
 import zoomHandler, { Scale } from "./modules/zoomHandler";
 import "./modules/PacketManager";
 import Controller from "./modules/Controller";
 import { IProps, ISaves } from "./types";
-import attackAnimation from "./hooks/attackAnimation";
 import createEntity from "./hooks/createEntity";
 import drawEntityInfo from "./hooks/drawEntityInfo";
 import drawItemBar from "./hooks/drawItemBar";
@@ -28,7 +27,6 @@ window.Dsync = {
         createEntity,
         drawItemBar,
         renderItems,
-        attackAnimation,
     },
     saves: {} as ISaves,
     controller,
@@ -42,7 +40,7 @@ window.Dsync = {
     connectURL: ""
 };
 export const Dsync = window.Dsync;
-storage.delete("_adIds");
+Storage.delete("_adIds");
 
 const proxyDetect = fromCharCode([97, 117, 116, 104, 111, 114]);
 const evalDelay = fromCharCode([77, 117, 114, 107, 97]);

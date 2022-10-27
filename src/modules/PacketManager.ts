@@ -1,7 +1,7 @@
 import { controller, Dsync, log } from "..";
 import { Hats } from "../constants/Hats";
+import attackAnimation from "../hooks/attackAnimation";
 import { createClan, deleteClan, updateClan } from "../hooks/clanHandler";
-import moveUpdate from "../hooks/moveUpdate";
 import playerStats from "../hooks/playerStats";
 import stringMessage from "../hooks/stringMessage";
 
@@ -18,6 +18,7 @@ export enum WebsocketServer {
     JOINCREATECLAN = 24,
     DELETECLAN = 27,
     KILLED = 28,
+    ATTACK_ANIMATION = 29,
     PLAYER_SPAWNED = 32,
     DEFAULT = 33,
     SPAWN = 35,
@@ -44,6 +45,7 @@ enum WebsocketClient {
     CREATECLAN = 22,
 }
 
+let start = Date.now();
 window.WebSocket = new Proxy(window.WebSocket, {
     construct(target, args: [url: string | URL, protocols?: string | string[]]) {
         if (typeof args[0] === "string") {
@@ -75,9 +77,16 @@ window.WebSocket = new Proxy(window.WebSocket, {
                     case WebsocketServer.UPDATECLAN:
                         updateClan();
                         break;
-                    case WebsocketServer.MOVEUPDATE:
-                        moveUpdate();
+                    case WebsocketServer.MOVEUPDATE: {
+                        const now = Date.now();
+                        Dsync.step = now - start;
+                        start = now;
                         break;
+                    }
+                    case WebsocketServer.ATTACK_ANIMATION: {
+                        attackAnimation();
+                        break;
+                    }
                 }
             }
         });

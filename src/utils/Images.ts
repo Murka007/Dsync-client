@@ -12,6 +12,10 @@ const createImage = (src: string) => {
     return img;
 }
 
+export const getURL = (type: "skin" | "accessory" | "back", id: number) => {
+    return `${location.origin}/img/ui/${type}${id}.png`;
+}
+
 const Images: Readonly<IImages> = {
     gaugeBackground: createImage("https://i.imgur.com/xincrX4.png"),
     gaugeFront: createImage("https://i.imgur.com/6AkHQM4.png"),

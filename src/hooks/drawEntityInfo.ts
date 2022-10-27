@@ -2,7 +2,7 @@ import { controller, Dsync, log } from "..";
 import { ELayer } from "../constants/LayerData";
 import settings from "../modules/Settings";
 import { Hit, TCTX, TObjectAny } from "../types";
-import { Formatter } from "../utils/Common";
+import { angle, Formatter } from "../utils/Common";
 import { EntityManager } from "../utils/Control";
 import { RenderManager } from "../utils/Rendering";
 
@@ -21,8 +21,8 @@ const drawEntityInfo = (
 
         if (controller.aimTarget !== null) {
             const aim = Formatter.entity(controller.aimTarget);
-            const angle = settings.visualAim ? EntityManager.angle(entity, aim) : controller.mouse.angle;
-            Dsync.myPlayer.target[Dsync.props.angle] = angle;
+            const dir = settings.visualAim ? angle(entity.x, entity.y, aim.x, aim.y) : controller.mouse.angle;
+            Dsync.myPlayer.target[Dsync.props.angle] = dir;
         }
     }
 

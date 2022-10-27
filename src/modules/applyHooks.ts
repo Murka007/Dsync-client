@@ -72,7 +72,7 @@ const applyHooks = (code: string) => {
 
     Hook.replace(
         "createEntity",
-        /(\w+\(ARGS{17}\)\{.+?(\w+)\.\w+=NUMBER{0};?\})(\}\w+\(\))/,
+        /(function \w+\((\w+),ARGS{16}\).+?\})(\}\w+\(\))/,
         `$1Dsync.hooks.createEntity($2)$3`
     );
 
@@ -150,11 +150,11 @@ const applyHooks = (code: string) => {
     const rotateSpeed = Hook.match("rotateSpeed", /\w+\(ARGS{17}\)\{.+?\/NUMBER{4}.+?\/NUMBER{4}.+?\w+\.(\w+)=/)[1];
     Dsync.props.rotateSpeed = rotateSpeed;
 
-    Hook.append(
-        "hitAnimation",
-        /\+=NUMBER{5}.+?(\w+)=.+?(\w+)=.+?(\w+)=.+?(\w+)=.+?(\w+)=.+?;/,
-        "Dsync.hooks.attackAnimation($2, $3, $4, $5, $6);"
-    );
+    // Hook.append(
+    //     "hitAnimation",
+    //     /\+=NUMBER{5}.+?(\w+)=.+?(\w+)=.+?(\w+)=.+?(\w+)=.+?(\w+)=.+?;/,
+    //     "Dsync.hooks.attackAnimation($2, $3, $4, $5, $6);"
+    // );
 
     Hook.append(
         "showHoods",
@@ -191,6 +191,17 @@ const applyHooks = (code: string) => {
         /(NUMBER{1006}.+?)(\w+\.\w+\(\w+,.+?\+(\w+)\))/,
         `$1if(pingCount!==$3&&!Dsync.settings.hideMessages){$2}`
     )
+
+    Hook.replace(
+        "players",
+        /(\)\)\(\).+?(\w+)=new.+?)function/,
+        `$1Dsync.saves.players=()=>$2;function`
+    )
+
+    const [skin, accessory, back] = Hook.matchAll("skins", /=\w+\.(\w+)\|\|NUMBER{0}/).map(a => a[1]);
+    Dsync.props.skin = skin;
+    Dsync.props.accessory = accessory;
+    Dsync.props.back = back;
 
     log("Total hooks: " + Hook.totalHooks);
     return Hook.code;

@@ -3,7 +3,6 @@
 @mixin checkbox {
     .switch-checkbox {
         position: relative;
-        margin-right: 25px;
 
         width: $checkbox-width;
         height: $checkbox-height;

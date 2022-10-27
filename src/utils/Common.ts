@@ -226,3 +226,24 @@ export const doWhile = (
         }
     }, delay);
 }
+
+const define = (target: TObjectAny, key: string, value: number) => {
+    Object.defineProperty(target, key, { get: () => value, configurable: true });
+}
+
+export const resetSkin = () => {
+    const player = Dsync.myPlayer.target;
+    if (!player) return;
+    delete player[Dsync.props.skin];
+    delete player[Dsync.props.accessory];
+    delete player[Dsync.props.back];
+}
+
+export const updateSkin = () => {
+    if (!settings.customSkins) return resetSkin();
+    const player = Dsync.myPlayer.target;
+    if (!player) return;
+    define(player, Dsync.props.skin, settings.skin);
+    define(player, Dsync.props.accessory, settings.accessory);
+    define(player, Dsync.props.back, settings.back);
+}

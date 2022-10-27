@@ -114,12 +114,12 @@ class Regex {
         return match;
     }
 
-    matchAll(name: string, regex: TRegex, flags: string, debug: boolean = false) {
-        const expression = this.format(name, regex, flags);
-        const matches = this.code.matchAll(expression);
+    matchAll(name: string, regex: TRegex, debug: boolean = false) {
+        const expression = this.format(name, regex, "g");
+        const matches = [...this.code.matchAll(expression)];
         this.hooks[name] = {
             expression,
-            match: [...matches]
+            match: matches
         };
 
         if (debug) log(name, this.hooks[name]);

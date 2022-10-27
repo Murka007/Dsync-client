@@ -27,6 +27,10 @@ export interface IProps {
     currentCount: string;
     rotateSpeed: string;
     itemBar: string;
+
+    skin: string;
+    accessory: string;
+    back: string;
 }
 
 export type TObjectAny = { [key: string]: any };
@@ -37,7 +41,6 @@ interface IHooks {
     createEntity(target: TObjectAny): void;
     drawItemBar(ctx: TCTX, imageData: TObjectAny, index: number): void;
     renderItems(target: TObjectAny, id: number, ctx: TCTX, step: number): void;
-    attackAnimation(type: number, id: number, weapon: number, isObject: number, entity: TObjectAny): void;
 }
 
 export interface ISaves {
@@ -50,6 +53,7 @@ export interface ISaves {
     toggleRotation(value: boolean): void;
     readonly buffer: Uint8Array;
     byteLength(): number;
+    players(): Map<number, TObjectAny>;
 }
 
 declare global {
@@ -156,6 +160,11 @@ export interface ISettings {
     visualAim: boolean;
     hideMessages: boolean;
 
+    customSkins: boolean;
+    skin: number;
+    accessory: number;
+    back: number;
+
     itemMarkers: boolean;
     teammateMarkers: boolean;
     enemyMarkers: boolean;
@@ -210,17 +219,6 @@ export enum EObjects {
     SPAWN = 16,
     POWERMILL = 19,
     ROOF = 48
-}
-
-export enum EWeapons {
-    MUSKET = 4,
-    SHIELD = 11,
-    STICK = 13,
-    HAMMER = 15,
-    BOW = 26,
-    XBOW = 27,
-    PEARL = 50,
-    SCYTHE = 57
 }
 
 export enum PlacementType {

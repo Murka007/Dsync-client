@@ -1,9 +1,9 @@
 import { controller, Dsync, log } from "..";
-import { Items, Shooting } from "../constants/Items";
+import { EWeapons, Items, Shooting } from "../constants/Items";
 import { ELayer } from "../constants/LayerData";
 import settings from "../modules/Settings";
-import { EWeapons, Reload, TObjectAny, TReload } from "../types";
-import { Formatter } from "../utils/Common";
+import { Reload, TObjectAny, TReload } from "../types";
+import { Formatter, updateSkin } from "../utils/Common";
 
 const createEntity = (target: TObjectAny) => {
     const id = target[Dsync.props.id];
@@ -12,6 +12,7 @@ const createEntity = (target: TObjectAny) => {
     if (type === ELayer.PLAYER) {
         if (id === Dsync.saves.myPlayerID()) {
             Dsync.myPlayer.target = target;
+            updateSkin();
         }
 
         const player = Formatter.player(target);

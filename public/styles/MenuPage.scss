@@ -26,6 +26,11 @@
         justify-content: space-between;
         align-items: center;
         gap: $padding;
+
+        > img {
+            width: 40px;
+            height: 40px;
+        }
     }
 
     .content-double {
@@ -130,6 +135,7 @@
                 justify-content: space-between;
                 align-items: center;
                 margin-top: $padding;
+                padding-right: 25px;
 
                 .icon {
                     width: 35px;

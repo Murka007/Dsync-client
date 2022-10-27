@@ -6,18 +6,34 @@ interface IStorage {
     delete(key: string): void;
 }
 
-export const storage: Readonly<IStorage> = {
-    get(key) {
+// export class storage: Readonly<IStorage> = {
+//     get<T>(key: string): T {
+//         const item = localStorage.getItem(key);
+//         return item !== null ? JSON.parse(item) : null;
+//     },
+//     set(key: string, value) {
+//         localStorage.setItem(key, JSON.stringify(value));
+//     },
+//     delete(key: string) {
+//         localStorage.removeItem(key);
+//     }
+// };
+export class Storage {
+    static get<T>(key: string): T | null {
         const item = localStorage.getItem(key);
         return item !== null ? JSON.parse(item) : null;
-    },
-    set(key, value) {
-        localStorage.setItem(key, JSON.stringify(value));
-    },
-    delete(key) {
-        localStorage.removeItem(key);
     }
-};
+
+    static set<T>(key: string, value: T): void {
+        localStorage.setItem(key, JSON.stringify(value));
+    }
+
+    static delete(key: string): boolean {
+        const has = localStorage.hasOwnProperty(key) && key in localStorage;
+        localStorage.removeItem(key);
+        return has;
+    }
+}
 
 export const defaultSettings: Readonly<ISettings> = {
     // Keybinds
@@ -96,6 +112,11 @@ export const defaultSettings: Readonly<ISettings> = {
     visualAim: true,
     hideMessages: false,
 
+    customSkins: false,
+    skin: Storage.get<number>("skin") || 27,
+    accessory: Storage.get<number>("accessory") || 30,
+    back: Storage.get<number>("back") || 2,
+
     itemMarkers: true,
     teammateMarkers: true,
     enemyMarkers: true,
@@ -144,14 +165,12 @@ export const defaultSettings: Readonly<ISettings> = {
     blindUsers: [0, 0, 0],
 };
 
-const settings: ISettings = { ...defaultSettings, ...storage.get("Dsync-settings") as ISettings };
-
+const settings = { ...defaultSettings, ...Storage.get<ISettings>("Dsync-settings") };
 for (const key in settings) {
     if (!defaultSettings.hasOwnProperty(key)) {
         delete settings[key as keyof typeof settings];
     }
 }
-
-storage.set("Dsync-settings", settings);
+Storage.set("Dsync-settings", settings);
 
 export default settings;

@@ -5,11 +5,14 @@ import Combat from "../../public/menu-pages/Combat.html";
 import Visuals from "../../public/menu-pages/Visuals.html";
 import Misc from "../../public/menu-pages/Misc.html";
 import Credits from "../../public/menu-pages/Credits.html";
-import CSS from "../styles/index.scss";
-import { contains, download, formatCode, removeChildren, removeClass } from "../utils/Common";
-import settings, { defaultSettings, storage } from "./Settings";
+import CSS from "../../public/styles/index.scss";
+import { contains, download, formatCode, removeChildren, removeClass, resetSkin, updateSkin } from "../utils/Common";
+import settings, { defaultSettings, Storage } from "./Settings";
 import { controller, Dsync, log } from "..";
 import { ISettings, PlacementType, selectData } from "../types";
+import { toggleHook } from "../hooks/renderLoop";
+import skins, { TSkins } from "../constants/Skins";
+import { getURL } from "../utils/Images";
 
 const createMenu = () => {
 
@@ -98,6 +101,7 @@ const createMenu = () => {
         const menuTransparency = iframeDocument.querySelector("#menuTransparency") as HTMLInputElement;
         const colorPickers = iframeDocument.querySelectorAll("input[type='color'][id]") as NodeListOf<HTMLInputElement>;
         const selects = iframeDocument.querySelectorAll("select[id]") as NodeListOf<HTMLSelectElement>;
+        const buttonPopups = iframeDocument.querySelectorAll("button[data-type='popup'][data-id]") as NodeListOf<HTMLButtonElement>;
 
         interface IPopup {
             index: number;
@@ -142,6 +146,8 @@ const createMenu = () => {
             return null;
         }
 
+        const fadeOut = "transition: all 150ms ease 0s; transform: scale(0); opacity: 0;";
+
         let popupOpened = false;
         const createPopup = () => {
             if (popupOpened) return;
@@ -182,11 +188,11 @@ const createMenu = () => {
             continuePopup.onclick = () => {
                 popupCount -= 1;
                 settings.blindUsers[popup.index] = 1;
-                storage.set("Dsync-settings", settings);
+                Storage.set("Dsync-settings", settings);
             }
 
             closePopup.onclick = () => {
-                container.style.cssText = "transition: all 150ms ease 0s; transform: scale(0); opacity: 0;";
+                container.style.cssText = fadeOut;
                 setTimeout(() => {
                     popupMenu.remove();
                     popupOpened = false;
@@ -197,6 +203,77 @@ const createMenu = () => {
         }
 
         const update = () => {
+
+            updateSkin();
+            for (const button of buttonPopups) {
+                const type = button.getAttribute("data-id") as TSkins;
+                const img = button.previousElementSibling as HTMLImageElement | null;
+
+                if (img) {
+                    img.src = getURL(type, settings[type]);
+                }
+
+                button.onclick = () => {
+                    const div = document.createElement("div");
+                    div.innerHTML = `
+                        <div id="popup-menu">
+                            <div id="popup-container" style="height: 70%">
+                                <svg
+                                    id="close-popup"
+                                    class="icon"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    viewBox="0 0 30 30"
+                                    width="30px" height="30px"
+                                >
+                                    <path d="M 7 4 C 6.744125 4 6.4879687 4.0974687 6.2929688 4.2929688 L 4.2929688 6.2929688 C 3.9019687 6.6839688 3.9019687 7.3170313 4.2929688 7.7070312 L 11.585938 15 L 4.2929688 22.292969 C 3.9019687 22.683969 3.9019687 23.317031 4.2929688 23.707031 L 6.2929688 25.707031 C 6.6839688 26.098031 7.3170313 26.098031 7.7070312 25.707031 L 15 18.414062 L 22.292969 25.707031 C 22.682969 26.098031 23.317031 26.098031 23.707031 25.707031 L 25.707031 23.707031 C 26.098031 23.316031 26.098031 22.682969 25.707031 22.292969 L 18.414062 15 L 25.707031 7.7070312 C 26.098031 7.3170312 26.098031 6.6829688 25.707031 6.2929688 L 23.707031 4.2929688 C 23.316031 3.9019687 22.682969 3.9019687 22.292969 4.2929688 L 15 11.585938 L 7.7070312 4.2929688 C 7.5115312 4.0974687 7.255875 4 7 4 z"/>
+                                </svg>
+                                <div id="popup-wrapper">
+                                    <div id="popup-content">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+
+                    const popupMenu = div.querySelector("#popup-menu") as HTMLDivElement;
+                    const container = div.querySelector("#popup-container") as HTMLDivElement;
+                    const popupContent = div.querySelector("#popup-content") as HTMLDivElement;
+                    const closePopup = div.querySelector("#close-popup") as SVGElement;
+
+                    const close = () => {
+                        container.style.cssText = fadeOut;
+                        setTimeout(() => {
+                            popupMenu.remove();
+                        }, 150);
+                    }
+
+                    for (const skin of skins[type]) {
+                        const div = document.createElement("div");
+                        const url = getURL(type, skin[1]);
+                        div.innerHTML = `
+                            <div class="img-prev">
+                                <img src="${url}">
+                            </div>
+                        `
+
+                        const setURL = () => {
+                            if (!img) return;
+                            img.src = url;
+                            settings[type] = skin[1];
+                            Storage.set("Dsync-settings", settings);
+                            close();
+                            updateSkin();
+                        }
+
+                        const imgPrev = div.querySelector(".img-prev") as HTMLDivElement;
+                        imgPrev.onclick = setURL;
+                        closePopup.onclick = close;
+                        popupContent.appendChild(imgPrev);
+                    }
+
+                    menuWrapper.appendChild(popupMenu);
+                }
+            }
 
             for (const select of selects) {
                 removeChildren(select);
@@ -224,7 +301,7 @@ const createMenu = () => {
                         settings.autoboostFollow = false;
                         update();
                     }
-                    storage.set("Dsync-settings", settings);
+                    Storage.set("Dsync-settings", settings);
                 }
             }
 
@@ -237,14 +314,14 @@ const createMenu = () => {
                     resetColor.onclick = () => {
                         picker.value = defaultColor;
                         settings[picker.id] = defaultColor;
-                        storage.set("Dsync-settings", settings);
+                        Storage.set("Dsync-settings", settings);
                     }
                 }
 
                 picker.value = settings[picker.id];
                 picker.onchange = () => {
                     settings[picker.id] = picker.value;
-                    storage.set("Dsync-settings", settings);
+                    Storage.set("Dsync-settings", settings);
                     picker.blur();
                 }
             }
@@ -255,7 +332,7 @@ const createMenu = () => {
             killMessage.value = settings.killMessage;
             killMessage.onchange = () => {
                 settings.killMessage = killMessage.value;
-                storage.set("Dsync-settings", settings);
+                Storage.set("Dsync-settings", settings);
                 killMessage.blur();
             }
 
@@ -265,7 +342,7 @@ const createMenu = () => {
                 input.value = settings.autochatMessages[i] || "";
                 input.onchange = () => {
                     settings.autochatMessages[i] = input.value;
-                    storage.set("Dsync-settings", settings);
+                    Storage.set("Dsync-settings", settings);
                     input.blur();
                 }
             }
@@ -287,7 +364,7 @@ const createMenu = () => {
                         sliderValue.textContent = slider.value;
                     }
                     settings[slider.id] = Number(slider.value);
-                    storage.set("Dsync-settings", settings);
+                    Storage.set("Dsync-settings", settings);
                 }
             }
 
@@ -296,7 +373,17 @@ const createMenu = () => {
                 checkbox.checked = settings[checkbox.id];
                 checkbox.onchange = () => {
                     settings[checkbox.id] = checkbox.checked;
-                    storage.set("Dsync-settings", settings);
+
+                    if (checkbox.id === "smoothZoom") {
+                        toggleHook();
+                    } else if (checkbox.id === "customSkins") {
+                        if (checkbox.checked) {
+                            updateSkin();
+                        } else {
+                            resetSkin();
+                        }
+                    }
+                    Storage.set("Dsync-settings", settings);
                     checkbox.blur();
                 }
             }
@@ -378,7 +465,7 @@ const createMenu = () => {
 
         resetSettings.onclick = () => {
             Object.assign(settings, defaultSettings);
-            storage.set("Dsync-settings", settings);
+            Storage.set("Dsync-settings", settings);
             update();
         }
 
@@ -397,7 +484,7 @@ const createMenu = () => {
                 const sets = JSON.parse(text) as ISettings;
                 if (Object.keys(sets).every(key => defaultSettings.hasOwnProperty(key))) {
                     Object.assign(settings, sets);
-                    storage.set("Dsync-settings", settings);
+                    Storage.set("Dsync-settings", settings);
                     update();
 
                     parent.classList.add("green");
@@ -438,7 +525,7 @@ const createMenu = () => {
             settings[Dsync.active.id as keyof typeof settings] = code === "Backspace" ? "..." : code;
             Dsync.active.textContent = key;
 
-            storage.set("Dsync-settings", settings);
+            Storage.set("Dsync-settings", settings);
             Dsync.active = null;
             checkForRepeats();
         }

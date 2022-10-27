@@ -1,9 +1,9 @@
 import { controller, Dsync, log } from "..";
 import { Hat, Hats } from "../constants/Hats";
-import { ActionType, Items, ItemType } from "../constants/Items";
+import { ActionType, EWeapons, Items, ItemType } from "../constants/Items";
 import { ELayer } from "../constants/LayerData";
 import { teammates } from "../hooks/clanHandler";
-import { EObjects, EWeapons, PlacementType, TargetReload, TObjectAny } from "../types";
+import { EObjects, PlacementType, TargetReload, TObjectAny } from "../types";
 import { angle, doWhile, Formatter, IEntity, isInput, sleep, TypeEntity } from "../utils/Common";
 import { EntityManager } from "../utils/Control";
 import PacketManager from "./PacketManager";
