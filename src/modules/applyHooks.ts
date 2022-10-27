@@ -150,12 +150,6 @@ const applyHooks = (code: string) => {
     const rotateSpeed = Hook.match("rotateSpeed", /\w+\(ARGS{17}\)\{.+?\/NUMBER{4}.+?\/NUMBER{4}.+?\w+\.(\w+)=/)[1];
     Dsync.props.rotateSpeed = rotateSpeed;
 
-    // Hook.append(
-    //     "hitAnimation",
-    //     /\+=NUMBER{5}.+?(\w+)=.+?(\w+)=.+?(\w+)=.+?(\w+)=.+?(\w+)=.+?;/,
-    //     "Dsync.hooks.attackAnimation($2, $3, $4, $5, $6);"
-    // );
-
     Hook.append(
         "showHoods",
         /\w+\.\w+!==\w+\)/,
