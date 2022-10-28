@@ -12,7 +12,7 @@ const applyHooks = (code: string) => {
     Hook.append(
         "EXTERNAL fix",
         /\(function (\w+)\(\w+\)\{/,
-        "const EXTERNAL = eval(`(() => ${COPY_CODE})()`);delete window.COPY_CODE;"
+        "let EXTERNAL = eval(`(() => ${COPY_CODE})()`);delete window.COPY_CODE;"
     );
 
     Hook.replace(
