@@ -6,13 +6,13 @@ const applyHooks = (code: string) => {
     const Hook = new Regex(code, true);
 
     // Save a copy of bundle
-    window.COPY_CODE = (Hook.COPY_CODE.match(/^\((.+)\)\(.+\);$/) || [])[1];
+    window.COPY_CODE = (Hook.COPY_CODE.match(/^(\(function EXTERNAL\(GLOB\)\{.+)\(.+?\);$/) || [])[1];
 
     // Make it possible to modify the bundle
     Hook.append(
         "EXTERNAL fix",
         /\(function (\w+)\(\w+\)\{/,
-        `EXTERNAL.__proto__.toString=()=>COPY_CODE;`
+        "const EXTERNAL = eval(`(() => ${COPY_CODE})()`);delete window.COPY_CODE;"
     );
 
     Hook.replace(
@@ -25,7 +25,7 @@ const applyHooks = (code: string) => {
         "buffer",
         /((\w+)=new \w+\(NUMBER{4096}\).+?(\w+)=.+?)function/,
         `$1Dsync.saves.buffer=$2;Dsync.saves.byteLength=()=>$3;function`
-    )
+    );
 
     Hook.append(
         "toggleRotation",
